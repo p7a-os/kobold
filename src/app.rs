@@ -991,6 +991,7 @@ pub struct App {
     /// a guess about what some config file said.
     pub model: String,
     pub effort: String,
+    pub harness: String,
     /// What the model can hold, for the gauge. Zero means unknown, and the
     /// gauge then reports the count alone rather than a fraction of a number
     /// nobody supplied.
@@ -1396,6 +1397,7 @@ impl App {
             debug: false,
             model: String::new(),
             effort: String::new(),
+            harness: String::new(),
             context_window: 0,
             code_bg: 235,
             menu: None,
@@ -2419,7 +2421,7 @@ impl App {
     /// commands cannot reach that today, which is exactly when to write the
     /// bound rather than rely on the count staying small.
     fn menu_rows(&self) -> u16 {
-        const MAX: usize = 6;
+        const MAX: usize = 8;
         crate::complete::matches(&self.pane().input).len().min(MAX) as u16
     }
 
@@ -2668,7 +2670,12 @@ impl App {
         let dim = Style::default().fg(Color::DarkGray);
         let mut spans: Vec<Span<'static>> = Vec::new();
         if with_model && !self.model.is_empty() {
-            spans.push(Span::styled(self.model.clone(), dim));
+            let label = if !self.harness.is_empty() {
+                format!("{} \u{b7} {}", self.harness, self.model)
+            } else {
+                self.model.clone()
+            };
+            spans.push(Span::styled(label, dim));
             if !self.effort.is_empty() {
                 spans.push(Span::styled(format!(" \u{b7} {}", self.effort), dim));
             }
@@ -3547,10 +3554,15 @@ mod tests {
         );
 
         app.pane_mut().set_input("/".into());
-        assert_eq!(app.menu_rows(), 4, "a bare slash offers every command");
+        assert_eq!(
+            app.menu_rows() as usize,
+            crate::complete::COMMANDS.len(),
+            "a bare slash offers every command"
+        );
         let seen = frame(&mut app, 60, 12);
-        for name in ["/voice", "/detach", "/quit", "/help"] {
-            assert!(seen.contains(name), "{name} missing from the list:\n{seen}");
+        for cmd in crate::complete::COMMANDS {
+            let name = format!("/{}", cmd.name);
+            assert!(seen.contains(&name), "{name} missing from the list:\n{seen}");
         }
         // Above the prompt, not below it: the row carrying the marker is the
         // input, and every suggestion has to sit before it.
@@ -3592,18 +3604,17 @@ mod tests {
     fn up_and_down_walk_the_list_and_wrap() {
         let mut app = App::new("main", "b0");
         app.pane_mut().set_input("/".into());
+        let total = app.menu_rows() as usize;
         assert_eq!(app.menu_index(), 0);
-        assert!(app.menu_move(1));
-        assert_eq!(app.menu_index(), 1);
-        assert!(app.menu_move(1));
-        assert_eq!(app.menu_index(), 2);
-        assert!(app.menu_move(1));
-        assert_eq!(app.menu_index(), 3);
-        // Wrapping both ways: with four entries the last is one press up.
+        for i in 1..total {
+            assert!(app.menu_move(1));
+            assert_eq!(app.menu_index(), i);
+        }
+        // Wrapping both ways:
         assert!(app.menu_move(1));
         assert_eq!(app.menu_index(), 0);
         assert!(app.menu_move(-1));
-        assert_eq!(app.menu_index(), 3, "up from the first reaches the last");
+        assert_eq!(app.menu_index(), total - 1, "up from the first reaches the last");
 
         // Tab takes the highlighted entry, not the first.
         assert!(app.complete_slash());
@@ -5657,21 +5668,21 @@ mod tests {
         // not pointing at.
         let mut app = App::new("main", "b0");
         app.pane_mut().set_input("/".into());
-        assert_eq!(
-            app.menu_rows(),
-            4,
+        let n = app.menu_rows();
+        assert!(
+            n >= 4,
             "the fixture needs several rows to tell them apart"
         );
 
-        let area = Rect::new(0, 0, 40, 4);
+        let area = Rect::new(0, 0, 40, n);
         let bg_of = |app: &App, row: u16| {
-            let mut buf = Buffer::empty(Rect::new(0, 0, 40, 6));
+            let mut buf = Buffer::empty(Rect::new(0, 0, 40, n + 2));
             app.render_menu(&mut buf, area);
             buf[(1, row)].style().bg
         };
 
         let lit = |app: &App| {
-            (0..4)
+            (0..n)
                 .filter(|r| bg_of(app, *r) == Some(Color::Indexed(238)))
                 .collect::<Vec<_>>()
         };
@@ -5682,12 +5693,10 @@ mod tests {
             "the first row should be chosen to begin with"
         );
 
-        app.menu_move(1);
-        assert_eq!(lit(&app), vec![1], "the highlight did not follow the arrow");
-        app.menu_move(1);
-        assert_eq!(lit(&app), vec![2], "the highlight did not follow the arrow");
-        app.menu_move(1);
-        assert_eq!(lit(&app), vec![3], "the highlight did not follow the arrow");
+        for i in 1..n {
+            app.menu_move(1);
+            assert_eq!(lit(&app), vec![i], "the highlight did not follow the arrow");
+        }
     }
 
     #[test]

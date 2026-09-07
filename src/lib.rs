@@ -7,6 +7,7 @@
 pub mod adapter;
 pub mod app;
 pub mod auth;
+pub mod catalog;
 pub mod complete;
 pub mod doctor;
 pub mod edit;

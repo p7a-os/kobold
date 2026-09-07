@@ -12,6 +12,7 @@ use futures_util::StreamExt;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -543,7 +544,7 @@ pub async fn run_onboarding_wizard(root: &Path) -> Result<Settings, Box<dyn std:
     }
 
     // 5. Run parallel Agent Doctor verification
-    println!("\n\x1b[1mPhase 3/3: Running Agent Sanity Checks in Parallel...\x1b[0m");
+    println!("\n\x1b[1mPhase 3/4: Running Agent Sanity Checks in Parallel...\x1b[0m");
     let health_results = if !selected_agent_specs.is_empty() {
         check_all_agents(&selected_agent_specs, Duration::from_secs(12)).await
     } else {
@@ -553,13 +554,6 @@ pub async fn run_onboarding_wizard(root: &Path) -> Result<Settings, Box<dyn std:
 
     // 6. Build and save settings.json
     let mut settings = Settings::default();
-
-    // Determine default Southbound adapter
-    if !selected_agent_ids.is_empty() {
-        settings.adapter = "kobold-adapter-acp".to_string();
-    } else if state.provider_checked[0] || state.provider_checked[1] {
-        settings.adapter = "kobold-openai".to_string();
-    }
 
     // Save agents state
     for h in &health_results {
@@ -601,6 +595,96 @@ pub async fn run_onboarding_wizard(root: &Path) -> Result<Settings, Box<dyn std:
         );
     }
 
+    // 7. Catalog supported models for each enabled agent and provider
+    println!("\x1b[1mPhase 4/4: Cataloging Supported Models...\x1b[0m");
+    let mut enabled_harnesses: Vec<&str> = Vec::new();
+    for id in &selected_agent_ids {
+        if let Some(canonical) = crate::catalog::normalize_harness(id) {
+            if !enabled_harnesses.contains(&canonical) {
+                enabled_harnesses.push(canonical);
+            }
+        }
+    }
+    if state.provider_checked[0] && !enabled_harnesses.contains(&crate::catalog::HARNESS_OPENAI) {
+        enabled_harnesses.push(crate::catalog::HARNESS_OPENAI);
+    }
+    if state.provider_checked[1] && !enabled_harnesses.contains(&crate::catalog::HARNESS_OPENROUTER) {
+        enabled_harnesses.push(crate::catalog::HARNESS_OPENROUTER);
+    }
+    if enabled_harnesses.is_empty() {
+        enabled_harnesses.push(crate::catalog::HARNESS_OPENAI);
+    }
+
+    settings.models_cache = crate::catalog::build_models_cache(&enabled_harnesses);
+    for h in &enabled_harnesses {
+        if let Some(models) = settings.models_cache.get(*h) {
+            println!(
+                "  \x1b[32m✓\x1b[0m {}: {} models ({})",
+                crate::catalog::harness_title(h),
+                models.len(),
+                models.join(", ")
+            );
+        }
+    }
+
+    // 8. Select Default Harness and Model
+    let chosen_harness = prompt_default_harness(&enabled_harnesses, &settings.models_cache)?;
+    let chosen_model = crate::catalog::default_model_for_harness(&chosen_harness);
+
+    settings.default_agent = Some(chosen_harness.clone());
+    settings.current_harness = Some(chosen_harness.clone());
+    settings.model = chosen_model.to_string();
+
+    // Set appropriate adapter and command args
+    match chosen_harness.as_str() {
+        crate::catalog::HARNESS_CLAUDE_CODE => {
+            settings.adapter = "kobold-adapter-acp".to_string();
+            settings.adapter_args = vec!["--agent-cmd".into(), "claude".into()];
+            settings.adapter_allow = Vec::new();
+        }
+        crate::catalog::HARNESS_GROK_BUILD => {
+            settings.adapter = "kobold-adapter-acp".to_string();
+            settings.adapter_args = vec!["--agent-cmd".into(), "grok".into()];
+            settings.adapter_allow = Vec::new();
+        }
+        crate::catalog::HARNESS_CODEX => {
+            settings.adapter = "kobold-adapter-acp".to_string();
+            settings.adapter_args = vec!["--agent-cmd".into(), "codex".into()];
+            settings.adapter_allow = Vec::new();
+        }
+        crate::catalog::HARNESS_OPENCODE => {
+            settings.adapter = "kobold-adapter-acp".to_string();
+            settings.adapter_args = vec!["--agent-cmd".into(), "opencode".into()];
+            settings.adapter_allow = Vec::new();
+        }
+        crate::catalog::HARNESS_ANTIGRAVITY => {
+            settings.adapter = "kobold-adapter-acp".to_string();
+            settings.adapter_args = vec!["--agent-cmd".into(), "agy".into()];
+            settings.adapter_allow = Vec::new();
+        }
+        crate::catalog::HARNESS_OPENROUTER => {
+            settings.adapter = "kobold-openai".to_string();
+            settings.adapter_args = Vec::new();
+            settings.adapter_allow = vec!["openrouter.ai".to_string()];
+        }
+        crate::catalog::HARNESS_OPENAI => {
+            settings.adapter = "kobold-openai".to_string();
+            settings.adapter_args = Vec::new();
+            settings.adapter_allow = vec!["api.openai.com".to_string()];
+        }
+        _ => {
+            settings.adapter = "kobold-openai".to_string();
+            settings.adapter_args = Vec::new();
+            settings.adapter_allow = vec!["api.openai.com".to_string()];
+        }
+    }
+
+    println!(
+        "\n\x1b[32m✓\x1b[0m Active harness: \x1b[1m{} ({})\x1b[0m",
+        crate::catalog::harness_title(&chosen_harness),
+        chosen_model
+    );
+
     settings.save(root)?;
     println!(
         "\x1b[32m✓\x1b[0m Setup complete! Settings saved to \x1b[1m{}/.kobold/settings.json\x1b[0m\n",
@@ -608,6 +692,41 @@ pub async fn run_onboarding_wizard(root: &Path) -> Result<Settings, Box<dyn std:
     );
 
     Ok(settings)
+}
+
+pub fn prompt_default_harness(
+    harnesses: &[&str],
+    cache: &std::collections::BTreeMap<String, Vec<String>>,
+) -> std::io::Result<String> {
+    if harnesses.is_empty() {
+        return Ok("openai".to_string());
+    }
+    if harnesses.len() == 1 {
+        return Ok(harnesses[0].to_string());
+    }
+
+    println!("\n\x1b[1mSelect Default Agent / Harness to use:\x1b[0m");
+    for (i, h) in harnesses.iter().enumerate() {
+        let title = crate::catalog::harness_title(h);
+        let def_m = crate::catalog::default_model_for_harness(h);
+        let count = cache.get(*h).map(|v| v.len()).unwrap_or(0);
+        println!(
+            "  \x1b[1m{})\x1b[0m {title} (default model: \x1b[36m{def_m}\x1b[0m, {count} models available)",
+            i + 1
+        );
+    }
+    print!("Choose default [1-{}, default 1]: ", harnesses.len());
+    std::io::stdout().flush()?;
+
+    let mut line = String::new();
+    let _ = std::io::stdin().read_line(&mut line);
+    let trimmed = line.trim();
+    if let Ok(idx) = trimmed.parse::<usize>() {
+        if idx >= 1 && idx <= harnesses.len() {
+            return Ok(harnesses[idx - 1].to_string());
+        }
+    }
+    Ok(harnesses[0].to_string())
 }
 
 #[cfg(test)]

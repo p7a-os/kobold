@@ -13,6 +13,18 @@ pub struct Command {
 
 pub const COMMANDS: &[Command] = &[
     Command {
+        name: "model",
+        help: "switch model or list available ([model][@provider])",
+    },
+    Command {
+        name: "backend",
+        help: "switch active agent/harness or list available",
+    },
+    Command {
+        name: "harness",
+        help: "alias for /backend",
+    },
+    Command {
         name: "voice",
         help: "speak replies aloud",
     },
@@ -84,6 +96,37 @@ pub fn args(name: &str, voice_on: bool) -> Vec<String> {
     if name == "voice" {
         out.extend(crate::tts::VOICES.iter().map(|v| (*v).to_owned()));
     }
+    if name == "backend" || name == "harness" {
+        out.extend(
+            [
+                "claude-code",
+                "grok-build",
+                "codex",
+                "opencode",
+                "antigravity",
+                "openai",
+                "openrouter",
+            ]
+            .iter()
+            .map(|&s| s.to_owned()),
+        );
+    }
+    if name == "model" {
+        out.extend(
+            [
+                "sonnet-5",
+                "opus-5",
+                "haiku-4.5",
+                "grok-4.6",
+                "grok-4.5",
+                "gpt-5.6-luna",
+                "gpt-5.6-terra",
+                "gpt-6-astra",
+            ]
+            .iter()
+            .map(|&s| s.to_owned()),
+        );
+    }
     out
 }
 
@@ -109,6 +152,12 @@ pub fn hint(input: &str, voice_on: bool) -> Option<String> {
         .collect();
     if name == "voice" {
         parts.push("<name>".to_owned());
+    }
+    if name == "model" {
+        parts.push("<model>[@provider]".to_owned());
+    }
+    if name == "backend" || name == "harness" {
+        parts.push("<harness>".to_owned());
     }
     Some(parts.join("   "))
 }
@@ -152,10 +201,15 @@ mod tests {
 
     #[test]
     fn a_bare_slash_offers_everything_and_a_prefix_narrows_it() {
-        assert_eq!(names("/"), vec!["voice", "detach", "quit", "help"]);
+        assert_eq!(
+            names("/"),
+            vec!["model", "backend", "harness", "voice", "detach", "quit", "help"]
+        );
+        assert_eq!(names("/m"), vec!["model"]);
+        assert_eq!(names("/b"), vec!["backend"]);
         assert_eq!(names("/v"), vec!["voice"]);
         assert_eq!(names("/d"), vec!["detach"]);
-        assert_eq!(names("/h"), vec!["help"]);
+        assert_eq!(names("/h"), vec!["harness", "help"]);
         // The `/q` alias is a prefix of `quit`, so it needs no special case.
         assert_eq!(names("/q"), vec!["quit"]);
         assert!(names("/zzz").is_empty());

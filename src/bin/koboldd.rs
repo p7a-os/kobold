@@ -185,22 +185,85 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
-    let adapter_cmd = adapter_override
-        .or_else(|| (!cfg.adapter.is_empty()).then(|| cfg.adapter.clone()))
-        .unwrap_or_else(|| {
-            if cfg.agents.values().any(|a| a.enabled) {
+    let (adapter_cmd, extra_args) = match adapter_override {
+        Some(cmd) => {
+            let mut parts = cmd.split_whitespace();
+            let bin = parts.next().unwrap_or("").to_string();
+            let args: Vec<String> = parts.map(|s| s.to_string()).collect();
+            (bin, args)
+        }
+        None => (
+            if !cfg.adapter.is_empty() {
+                cfg.adapter.clone()
+            } else if cfg.agents.values().any(|a| a.enabled) {
                 "kobold-adapter-acp".to_string()
             } else {
                 "kobold-openai".to_string()
+            },
+            Vec::new(),
+        ),
+    };
+
+    let mut adapter_args = cfg.adapter_args.clone();
+    adapter_args.extend(extra_args);
+    if adapter_cmd.contains("acp") {
+        if let Ok(cmd) = std::env::var("ACP_AGENT_CMD") {
+            if !adapter_args.iter().any(|a| a == "--agent-cmd") {
+                adapter_args.push("--agent-cmd".into());
+                adapter_args.push(cmd);
             }
-        });
+        }
+        if let Ok(args) = std::env::var("ACP_AGENT_ARGS") {
+            if !adapter_args.iter().any(|a| a == "--agent-args") {
+                adapter_args.push("--agent-args".into());
+                adapter_args.push(args);
+            }
+        }
+
+        if !adapter_args.iter().any(|a| a == "--agent-cmd" || a == "--mock") {
+            let active = cfg.active_harness();
+            let agent_exe = match active {
+                kobold::catalog::HARNESS_CLAUDE_CODE => Some("claude"),
+                kobold::catalog::HARNESS_GROK_BUILD => Some("grok"),
+                kobold::catalog::HARNESS_CODEX => Some("codex"),
+                kobold::catalog::HARNESS_OPENCODE => Some("opencode"),
+                kobold::catalog::HARNESS_ANTIGRAVITY => Some("agy"),
+                _ => cfg.agents.iter().find(|(_, a)| a.enabled).and_then(|(k, _)| {
+                    match k.as_str() {
+                        "claude-code" | "claude" => Some("claude"),
+                        "grok-build" | "grok" => Some("grok"),
+                        "codex" => Some("codex"),
+                        "opencode" => Some("opencode"),
+                        "antigravity" | "agy" => Some("agy"),
+                        _ => None,
+                    }
+                }),
+            };
+            if let Some(exe) = agent_exe {
+                adapter_args.push("--agent-cmd".into());
+                adapter_args.push(exe.into());
+            }
+        }
+        if !adapter_args.iter().any(|a| a == "--model") {
+            let model_to_pass = if cfg.current_harness.is_some() || cfg.default_agent.is_some() {
+                cfg.model.clone()
+            } else {
+                let active = cfg.active_harness();
+                kobold::catalog::default_model_for_harness(active).to_string()
+            };
+            if !model_to_pass.is_empty() {
+                adapter_args.push("--model".into());
+                adapter_args.push(model_to_pass);
+            }
+        }
+    }
 
     let is_unconfined = unconfined
         || adapter_cmd.contains("tmux")
         || adapter_cmd.contains("pty")
         || adapter_cmd.contains("acp");
     let (_adapter, cmd_tx, adapter_rx) = if is_unconfined {
-        kobold::adapter::Adapter::spawn_unconfined(&adapter_cmd, &cfg.adapter_args, &startup)
+        kobold::adapter::Adapter::spawn_unconfined(&adapter_cmd, &adapter_args, &startup)
             .await?
     } else {
         let allow_hosts = if cfg.adapter_allow.is_empty() {
@@ -208,7 +271,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             cfg.adapter_allow.clone()
         };
-        kobold::adapter::Adapter::spawn(&adapter_cmd, &cfg.adapter_args, &startup, &allow_hosts)
+        kobold::adapter::Adapter::spawn(&adapter_cmd, &adapter_args, &startup, &allow_hosts)
             .await?
     };
 

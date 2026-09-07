@@ -27,7 +27,7 @@ pub const SUPPORTED_AGENTS: &[AgentSpec] = &[
         name: "Claude Code",
         primary_bin: "claude",
         fallback_bins: &[],
-        probe_args: &["-p", "Say hi"],
+        probe_args: &["--version"],
         version_args: &["--version"],
     },
     AgentSpec {
@@ -35,7 +35,7 @@ pub const SUPPORTED_AGENTS: &[AgentSpec] = &[
         name: "Grok",
         primary_bin: "grok",
         fallback_bins: &[],
-        probe_args: &["-p", "Say hi"],
+        probe_args: &["models"],
         version_args: &["--version"],
     },
     AgentSpec {
@@ -43,7 +43,7 @@ pub const SUPPORTED_AGENTS: &[AgentSpec] = &[
         name: "Antigravity",
         primary_bin: "agy",
         fallback_bins: &["antigravity"],
-        probe_args: &["-p", "Say hi"],
+        probe_args: &["models"],
         version_args: &["--version"],
     },
     AgentSpec {
@@ -51,7 +51,7 @@ pub const SUPPORTED_AGENTS: &[AgentSpec] = &[
         name: "Codex",
         primary_bin: "codex",
         fallback_bins: &[],
-        probe_args: &["exec", "Say hi"],
+        probe_args: &["--version"],
         version_args: &["--version"],
     },
     AgentSpec {
@@ -59,7 +59,7 @@ pub const SUPPORTED_AGENTS: &[AgentSpec] = &[
         name: "OpenCode",
         primary_bin: "opencode",
         fallback_bins: &[],
-        probe_args: &["run", "Say hi"],
+        probe_args: &["models"],
         version_args: &["--version"],
     },
 ];
@@ -222,6 +222,19 @@ pub async fn probe_agent(spec: AgentSpec, timeout: Duration) -> AgentHealth {
                     detected: true,
                     working: true,
                     status: note,
+                    duration,
+                }
+            } else if let Some(ref ver) = version {
+                // The agent CLI exists, is executable, and returned a valid version string
+                AgentHealth {
+                    id: spec.id.to_string(),
+                    name: spec.name.to_string(),
+                    command: cmd_name,
+                    path: Some(bin_path),
+                    version: Some(ver.clone()),
+                    detected: true,
+                    working: true,
+                    status: format!("OK ({ver}, {:.1}s)", duration.as_secs_f32()),
                     duration,
                 }
             } else {

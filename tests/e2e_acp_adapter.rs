@@ -60,7 +60,7 @@ async fn test_e2e_koboldd_with_acp_adapter() {
         .arg("--workdir")
         .arg(dir.path())
         .arg("--adapter")
-        .arg(&acp_adapter_bin)
+        .arg(format!("{} --mock", acp_adapter_bin.display()))
         .spawn()
         .expect("spawn koboldd with acp adapter");
 

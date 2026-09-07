@@ -91,6 +91,15 @@ pub struct Settings {
     /// at a comfortable third of the way along right up until the conversation
     /// stops fitting. Set it to what the model actually holds.
     pub context_window: u32,
+    /// Default agent/provider harness selected on setup.
+    #[serde(default)]
+    pub default_agent: Option<String>,
+    /// Currently active harness (e.g. claude-code, grok-build, codex, openai, openrouter).
+    #[serde(default)]
+    pub current_harness: Option<String>,
+    /// Cached supported models for each harness.
+    #[serde(default)]
+    pub models_cache: std::collections::BTreeMap<String, Vec<String>>,
     /// Configured external coding agents supervised by Kobold.
     #[serde(default)]
     pub agents: std::collections::BTreeMap<String, AgentSetting>,
@@ -148,9 +157,88 @@ impl Default for Settings {
             mcp_servers: Vec::new(),
             server_tools: Vec::new(),
             context_window: 128_000,
+            default_agent: None,
+            current_harness: None,
+            models_cache: std::collections::BTreeMap::new(),
             agents: std::collections::BTreeMap::new(),
             providers: std::collections::BTreeMap::new(),
         }
+    }
+}
+
+impl Settings {
+    /// Returns the currently active harness identifier (e.g. "claude-code", "grok-build", "openai").
+    pub fn active_harness(&self) -> &str {
+        self.current_harness
+            .as_deref()
+            .or(self.default_agent.as_deref())
+            .unwrap_or_else(|| {
+                if let Some((agent_id, _a)) = self.agents.iter().find(|(_, a)| a.enabled) {
+                    return agent_id.as_str();
+                }
+                if self.providers.contains_key("openrouter") {
+                    return "openrouter";
+                }
+                "openai"
+            })
+    }
+
+    /// Updates active harness, model, and adapter on disk in `.kobold/settings.json`.
+    pub fn update_harness_and_model(
+        &mut self,
+        root: &Path,
+        harness: &str,
+        model: &str,
+    ) -> std::io::Result<()> {
+        let canonical = crate::catalog::normalize_harness(harness).unwrap_or(harness);
+        self.current_harness = Some(canonical.to_string());
+        self.model = model.to_string();
+
+        // Update adapter settings according to chosen harness
+        match canonical {
+            crate::catalog::HARNESS_CLAUDE_CODE => {
+                self.adapter = "kobold-adapter-acp".to_string();
+                self.adapter_args = vec!["--agent-cmd".into(), "claude".into()];
+                self.adapter_allow = Vec::new();
+            }
+            crate::catalog::HARNESS_GROK_BUILD => {
+                self.adapter = "kobold-adapter-acp".to_string();
+                self.adapter_args = vec!["--agent-cmd".into(), "grok".into()];
+                self.adapter_allow = Vec::new();
+            }
+            crate::catalog::HARNESS_CODEX => {
+                self.adapter = "kobold-adapter-acp".to_string();
+                self.adapter_args = vec!["--agent-cmd".into(), "codex".into()];
+                self.adapter_allow = Vec::new();
+            }
+            crate::catalog::HARNESS_OPENCODE => {
+                self.adapter = "kobold-adapter-acp".to_string();
+                self.adapter_args = vec!["--agent-cmd".into(), "opencode".into()];
+                self.adapter_allow = Vec::new();
+            }
+            crate::catalog::HARNESS_ANTIGRAVITY => {
+                self.adapter = "kobold-adapter-acp".to_string();
+                self.adapter_args = vec!["--agent-cmd".into(), "agy".into()];
+                self.adapter_allow = Vec::new();
+            }
+            crate::catalog::HARNESS_OPENROUTER => {
+                self.adapter = "kobold-openai".to_string();
+                self.adapter_args = Vec::new();
+                self.adapter_allow = vec!["openrouter.ai".to_string()];
+            }
+            crate::catalog::HARNESS_OPENAI => {
+                self.adapter = "kobold-openai".to_string();
+                self.adapter_args = Vec::new();
+                self.adapter_allow = vec!["api.openai.com".to_string()];
+            }
+            _ => {
+                self.adapter = "kobold-openai".to_string();
+                self.adapter_args = Vec::new();
+                self.adapter_allow = vec!["api.openai.com".to_string()];
+            }
+        }
+
+        self.save(root)
     }
 }
 

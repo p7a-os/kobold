@@ -562,7 +562,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         let _ = settings::Settings::ensure_file(&root);
     }
-    let (cfg, cfg_note) = settings::Settings::load(&root);
+    let (mut cfg, cfg_note) = settings::Settings::load(&root);
+
+    // If no default agent or current harness is configured, prompt or auto-select from enabled ones
+    if cfg.default_agent.is_none() && cfg.current_harness.is_none() {
+        let mut enabled_harnesses: Vec<&str> = Vec::new();
+        for (name, agent) in &cfg.agents {
+            if agent.enabled {
+                if let Some(norm) = kobold::catalog::normalize_harness(name) {
+                    if !enabled_harnesses.contains(&norm) {
+                        enabled_harnesses.push(norm);
+                    }
+                }
+            }
+        }
+        for (name, prov) in &cfg.providers {
+            if prov.enabled {
+                if let Some(norm) = kobold::catalog::normalize_harness(name) {
+                    if !enabled_harnesses.contains(&norm) {
+                        enabled_harnesses.push(norm);
+                    }
+                }
+            }
+        }
+        if !enabled_harnesses.is_empty() {
+            if cfg.models_cache.is_empty() {
+                cfg.models_cache = kobold::catalog::build_models_cache(&enabled_harnesses);
+            }
+            let chosen = if enabled_harnesses.len() == 1 {
+                enabled_harnesses[0].to_string()
+            } else {
+                kobold::wizard::prompt_default_harness(&enabled_harnesses, &cfg.models_cache)
+                    .unwrap_or_else(|_| enabled_harnesses[0].to_string())
+            };
+            let def_model = kobold::catalog::default_model_for_harness(&chosen);
+            let _ = cfg.update_harness_and_model(&root, &chosen, def_model);
+        }
+    }
 
     let handle = ensure_daemon(
         &socket,
@@ -597,6 +633,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(str::to_owned)
             .collect()
     };
+
     let (notice_tx, mut notice_rx) = mpsc::unbounded_channel::<String>();
     let audio_addr = (!cfg.voice.audio_addr.is_empty()).then(|| cfg.voice.audio_addr.clone());
     app.voice_remote = audio_addr.is_some();
@@ -607,6 +644,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.voice = cfg.voice.enabled;
     app.debug = debug;
     app.model = cfg.model.clone();
+    app.harness = cfg.active_harness().to_string();
     app.effort = cfg.reasoning_effort.clone();
     app.context_window = cfg.context_window;
     app.code_bg = cfg.code_bg;
@@ -621,6 +659,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             cfg.adapter.contains("acp")
                 || cfg.adapter.contains("tmux")
                 || cfg.adapter.contains("pty")
+                || cfg.agents.values().any(|a| a.enabled)
         });
     if !mock_mode && !is_external {
         let has_key = std::env::var("LLM_API_KEY")
@@ -1364,9 +1403,14 @@ async fn oneshot(
     if prompt.is_empty() {
         return Err("empty prompt".into());
     }
-    let is_external_adapter = adapter_override
-        .map(|a| a.contains("acp") || a.contains("tmux") || a.contains("pty"))
-        .unwrap_or(false);
+    let (cfg, _) = settings::Settings::load(workdir);
+    let adapter_name = adapter_override
+        .or_else(|| (!cfg.adapter.is_empty()).then_some(cfg.adapter.as_str()))
+        .unwrap_or(DEFAULT_ADAPTER);
+    let is_external_adapter = adapter_name.contains("acp")
+        || adapter_name.contains("tmux")
+        || adapter_name.contains("pty")
+        || cfg.agents.values().any(|a| a.enabled);
     if !mock_mode && !is_external_adapter {
         let _ = std::env::var("LLM_API_KEY")
             .or_else(|_| std::env::var("OPENAI_API_KEY"))
@@ -1615,6 +1659,119 @@ fn slash(app: &mut App, speaker: &mut Option<Box<dyn tts::StreamingTts>>, line: 
                 }
             };
             app.push(Who::System, note);
+        }
+        "model" => {
+            let (mut cfg, _) = if let Some(root) = &app.root {
+                settings::Settings::load(root)
+            } else {
+                (settings::Settings::default(), None)
+            };
+            let cur_harness = cfg.active_harness().to_string();
+            let cur_model = cfg.model.clone();
+
+            if arg.is_empty() {
+                let mut out = format!(
+                    "Current: {} \u{b7} {}\n\nAvailable models for {}:",
+                    kobold::catalog::harness_title(&cur_harness),
+                    cur_model,
+                    cur_harness
+                );
+                if let Some(models) = cfg.models_cache.get(&cur_harness) {
+                    for m in models {
+                        out.push_str(&format!("\n  - {m}"));
+                    }
+                } else {
+                    let def_m = kobold::catalog::default_model_for_harness(&cur_harness);
+                    out.push_str(&format!("\n  - {def_m} (default)"));
+                }
+                out.push_str("\n\nSwitch model: /model <name> or /model <name>@<harness>");
+                app.push(Who::System, out);
+                return;
+            }
+
+            match kobold::catalog::match_model(&cfg.models_cache, Some(&cur_harness), arg) {
+                Ok((matched_harness, matched_model)) => {
+                    let harness_changed = matched_harness != cur_harness;
+                    let model_changed = matched_model != cur_model;
+
+                    if let Some(root) = &app.root {
+                        let _ = cfg.update_harness_and_model(root, &matched_harness, &matched_model);
+                    }
+                    app.harness = matched_harness.clone();
+                    app.model = matched_model.clone();
+
+                    let msg = if harness_changed {
+                        format!(
+                            "switched to model: {} and harness: {}",
+                            matched_model,
+                            kobold::catalog::harness_title(&matched_harness)
+                        )
+                    } else if model_changed {
+                        format!("switched to model: {matched_model}")
+                    } else {
+                        format!("already using model: {matched_model}")
+                    };
+                    app.push(Who::System, msg);
+                }
+                Err(err) => {
+                    app.push(Who::System, err);
+                }
+            }
+        }
+        "backend" | "harness" => {
+            let (mut cfg, _) = if let Some(root) = &app.root {
+                settings::Settings::load(root)
+            } else {
+                (settings::Settings::default(), None)
+            };
+            let cur_harness = cfg.active_harness();
+
+            if arg.is_empty() {
+                let mut out = format!(
+                    "Current harness: {} ({})\n\nAvailable harnesses:\n",
+                    kobold::catalog::harness_title(cur_harness),
+                    cur_harness
+                );
+                for h in [
+                    kobold::catalog::HARNESS_CLAUDE_CODE,
+                    kobold::catalog::HARNESS_GROK_BUILD,
+                    kobold::catalog::HARNESS_CODEX,
+                    kobold::catalog::HARNESS_OPENCODE,
+                    kobold::catalog::HARNESS_ANTIGRAVITY,
+                    kobold::catalog::HARNESS_OPENAI,
+                    kobold::catalog::HARNESS_OPENROUTER,
+                ] {
+                    let title = kobold::catalog::harness_title(h);
+                    let def_m = kobold::catalog::default_model_for_harness(h);
+                    let marker = if h == cur_harness { " (active)" } else { "" };
+                    out.push_str(&format!("  - {h} ({title}, default: {def_m}){marker}\n"));
+                }
+                out.push_str("\nSwitch with: /backend <name>");
+                app.push(Who::System, out);
+                return;
+            }
+
+            if let Some(target_harness) = kobold::catalog::normalize_harness(arg) {
+                let def_model = kobold::catalog::default_model_for_harness(target_harness);
+                if let Some(root) = &app.root {
+                    let _ = cfg.update_harness_and_model(root, target_harness, def_model);
+                }
+                app.harness = target_harness.to_string();
+                app.model = def_model.to_string();
+                app.push(
+                    Who::System,
+                    format!(
+                        "switched harness to: {} (model: {})",
+                        kobold::catalog::harness_title(target_harness),
+                        def_model
+                    ),
+                );
+            } else {
+                app.push(
+                    Who::System,
+                    format!("unknown harness '{arg}'. Run /backend to see available harnesses."),
+                );
+            }
         }
         "detach" => app.should_detach = true,
         "quit" | "q" => app.should_quit = true,
