@@ -159,9 +159,9 @@ pub async fn openrouter_oauth_flow() -> Result<String, Box<dyn std::error::Error
                                     if let Some((k, v)) = pair.split_once('=') {
                                         if k == "code" {
                                             let code = v.to_string();
-                                            let html = "<!DOCTYPE html><html><body style='font-family:system-ui,sans-serif;text-align:center;padding:40px;'><h2>✓ Kobold Authenticated</h2><p>OpenRouter authorization received. You may close this tab and return to the terminal.</p></body></html>";
+                                            let html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Kobold Authenticated</title><style>body{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;background:#0f1419;color:#e6edf3;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:40px 32px;text-align:center;max-width:440px;box-shadow:0 8px 24px rgba(0,0,0,0.5);}.icon{font-size:44px;color:#3fb950;margin-bottom:16px;}h2{margin:0 0 12px;font-size:22px;color:#fff;}p{margin:0;font-size:14px;color:#8b949e;line-height:1.6;}</style></head><body><div class=\"card\"><div class=\"icon\">&#10003;</div><h2>Kobold Authenticated</h2><p>OpenRouter authorization received.<br>You may close this tab and return to the terminal.</p></div></body></html>";
                                             let resp = format!(
-                                                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                                                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                                                 html.len(),
                                                 html
                                             );
