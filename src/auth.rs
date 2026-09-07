@@ -85,7 +85,7 @@ pub fn generate_pkce() -> (String, String) {
     (verifier, challenge)
 }
 
-/// Run OpenRouter PKCE OAuth flow using a local loopback server.
+/// Run OpenRouter PKCE OAuth flow using a local loopback server or manual code entry.
 pub async fn openrouter_oauth_flow() -> Result<String, Box<dyn std::error::Error>> {
     if let Ok(key) = std::env::var("OPENROUTER_API_KEY") {
         if !key.trim().is_empty() {
@@ -94,57 +94,94 @@ pub async fn openrouter_oauth_flow() -> Result<String, Box<dyn std::error::Error
     }
 
     let (verifier, challenge) = generate_pkce();
-    let listener = TcpListener::bind("127.0.0.1:0").await?;
-    let port = listener.local_addr()?.port();
 
-    let encoded_callback = format!("http%3A%2F%2Flocalhost%3A{port}%2Fcallback");
-    let auth_url = format!(
-        "https://openrouter.ai/auth?callback_url={encoded_callback}&code_challenge={challenge}&code_challenge_method=S256"
-    );
+    println!("\n\x1b[1mOpenRouter OAuth Authentication\x1b[0m");
+    println!("Choose authorization method:");
+    println!("  \x1b[1m1)\x1b[0m Automatic browser redirect to localhost (desktop default)");
+    println!("  \x1b[1m2)\x1b[0m Copy-paste authorization code from browser (headless / remote SSH)");
+    print!("Selection [1/2, default 1]: ");
+    io::stdout().flush()?;
 
-    println!("\x1b[36minfo:\x1b[0m Starting OpenRouter OAuth authentication...");
-    println!("Opening browser at: {auth_url}");
-    println!("Waiting for authorization from OpenRouter...\n");
-    open_browser(&auth_url);
+    let mut choice = String::new();
+    let _ = io::stdin().read_line(&mut choice);
+    let use_manual = choice.trim() == "2";
 
-    let auth_code = tokio::time::timeout(Duration::from_secs(120), async {
-        loop {
-            let (mut socket, _) = listener.accept().await?;
-            let mut buf = [0u8; 4096];
-            let n = socket.read(&mut buf).await?;
-            let req = String::from_utf8_lossy(&buf[..n]);
+    let auth_code = if use_manual {
+        let auth_url = format!(
+            "https://openrouter.ai/auth?code_challenge={challenge}&code_challenge_method=S256&key_label=Kobold"
+        );
+        println!("\nOpening browser at: \x1b[36m{auth_url}\x1b[0m");
+        println!("1. Authorize Kobold in the OpenRouter window.");
+        println!("2. Copy the authorization code displayed on screen.\n");
+        open_browser(&auth_url);
 
-            if let Some(line) = req.lines().next() {
-                if line.contains("GET ") {
-                    if let Some(path) = line.split_whitespace().nth(1) {
-                        if let Some(query_idx) = path.find('?') {
-                            let query = &path[query_idx + 1..];
-                            for pair in query.split('&') {
-                                if let Some((k, v)) = pair.split_once('=') {
-                                    if k == "code" {
-                                        let code = v.to_string();
-                                        let html = "<!DOCTYPE html><html><body style='font-family:system-ui,sans-serif;text-align:center;padding:40px;'><h2>✓ Kobold Authenticated</h2><p>OpenRouter authorization received. You may close this tab and return to the terminal.</p></body></html>";
-                                        let resp = format!(
-                                            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                                            html.len(),
-                                            html
-                                        );
-                                        let _ = socket.write_all(resp.as_bytes()).await;
-                                        let _ = socket.flush().await;
-                                        return Ok::<String, io::Error>(code);
+        print!("Paste your OpenRouter authorization code (or existing 'sk-or-' key): ");
+        io::stdout().flush()?;
+
+        let mut code_input = String::new();
+        io::stdin().read_line(&mut code_input)?;
+        let trimmed = code_input.trim().to_string();
+        if trimmed.is_empty() {
+            return Err("no authorization code or key provided".into());
+        }
+        if trimmed.starts_with("sk-or-") {
+            println!("\x1b[32m✓\x1b[0m Using provided OpenRouter API key.");
+            return Ok(trimmed);
+        }
+        trimmed
+    } else {
+        let listener = TcpListener::bind("127.0.0.1:0").await?;
+        let port = listener.local_addr()?.port();
+
+        let encoded_callback = format!("http%3A%2F%2Flocalhost%3A{port}%2Fcallback");
+        let auth_url = format!(
+            "https://openrouter.ai/auth?callback_url={encoded_callback}&code_challenge={challenge}&code_challenge_method=S256&key_label=Kobold"
+        );
+
+        println!("\x1b[36minfo:\x1b[0m Starting OpenRouter OAuth authentication...");
+        println!("Opening browser at: {auth_url}");
+        println!("Waiting for authorization from OpenRouter...\n");
+        open_browser(&auth_url);
+
+        tokio::time::timeout(Duration::from_secs(120), async {
+            loop {
+                let (mut socket, _) = listener.accept().await?;
+                let mut buf = [0u8; 4096];
+                let n = socket.read(&mut buf).await?;
+                let req = String::from_utf8_lossy(&buf[..n]);
+
+                if let Some(line) = req.lines().next() {
+                    if line.contains("GET ") {
+                        if let Some(path) = line.split_whitespace().nth(1) {
+                            if let Some(query_idx) = path.find('?') {
+                                let query = &path[query_idx + 1..];
+                                for pair in query.split('&') {
+                                    if let Some((k, v)) = pair.split_once('=') {
+                                        if k == "code" {
+                                            let code = v.to_string();
+                                            let html = "<!DOCTYPE html><html><body style='font-family:system-ui,sans-serif;text-align:center;padding:40px;'><h2>✓ Kobold Authenticated</h2><p>OpenRouter authorization received. You may close this tab and return to the terminal.</p></body></html>";
+                                            let resp = format!(
+                                                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                                                html.len(),
+                                                html
+                                            );
+                                            let _ = socket.write_all(resp.as_bytes()).await;
+                                            let _ = socket.flush().await;
+                                            return Ok::<String, io::Error>(code);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            let not_found = "HTTP/1.1 404 NOT FOUND\r\nConnection: close\r\n\r\n";
-            let _ = socket.write_all(not_found.as_bytes()).await;
-        }
-    })
-    .await??;
+                let not_found = "HTTP/1.1 404 NOT FOUND\r\nConnection: close\r\n\r\n";
+                let _ = socket.write_all(not_found.as_bytes()).await;
+            }
+        })
+        .await??
+    };
 
     println!("\x1b[32m✓\x1b[0m Authorization code received. Exchanging for API key...");
 

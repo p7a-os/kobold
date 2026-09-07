@@ -16,7 +16,9 @@ fn bin() -> std::path::PathBuf {
 }
 
 fn run(args: &[&str], env: &[(&str, &str)], stdin: Option<&str>) -> std::process::Output {
+    let tmp = tempfile::tempdir().expect("tempdir");
     let mut cmd = Command::new(bin());
+    cmd.current_dir(tmp.path());
     cmd.args(args);
     // Cleared so a developer's own key or config cannot change the result.
     cmd.env_remove("LLM_API_KEY").env_remove("OPENAI_API_KEY");
