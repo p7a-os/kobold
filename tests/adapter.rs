@@ -31,7 +31,13 @@ fn fake() -> String {
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("fake-adapter").to_string_lossy().into_owned()
+    let candidate = p.join("fake-adapter");
+    if !candidate.exists() {
+        let _ = std::process::Command::new("cargo")
+            .args(["build", "--bin", "fake-adapter"])
+            .output();
+    }
+    candidate.to_string_lossy().into_owned()
 }
 
 fn startup() -> Startup {

@@ -12,7 +12,13 @@ fn bin() -> std::path::PathBuf {
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("kobold")
+    let candidate = p.join("kobold");
+    if !candidate.exists() {
+        let _ = Command::new("cargo")
+            .args(["build", "--bin", "kobold"])
+            .output();
+    }
+    candidate
 }
 
 fn run(args: &[&str], env: &[(&str, &str)], stdin: Option<&str>) -> std::process::Output {
