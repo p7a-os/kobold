@@ -2763,10 +2763,12 @@ mod tests {
             p.pop();
         }
         let candidate = p.join("fake-adapter");
-        if !candidate.exists() {
-            let _ = std::process::Command::new("cargo")
-                .args(["build", "--bin", "fake-adapter"])
-                .output();
+        if candidate.exists() {
+            return candidate.to_string_lossy().into_owned();
+        }
+        let fallback = std::path::PathBuf::from("target/debug/fake-adapter");
+        if fallback.exists() {
+            return fallback.to_string_lossy().into_owned();
         }
         candidate.to_string_lossy().into_owned()
     }

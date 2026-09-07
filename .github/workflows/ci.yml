@@ -45,8 +45,10 @@ jobs:
       - name: Run Clippy Linter
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Build Test Binaries
-        run: cargo test --no-run --workspace --all-targets
+      - name: Build Binaries and Tests
+        run: |
+          cargo build --workspace --bins
+          cargo test --no-run --workspace --all-targets
 
       - name: Run Tests
         run: cargo test --workspace --all-targets

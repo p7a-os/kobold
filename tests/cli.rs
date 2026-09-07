@@ -13,10 +13,12 @@ fn bin() -> std::path::PathBuf {
         p.pop();
     }
     let candidate = p.join("kobold");
-    if !candidate.exists() {
-        let _ = Command::new("cargo")
-            .args(["build", "--bin", "kobold"])
-            .output();
+    if candidate.exists() {
+        return candidate;
+    }
+    let fallback = std::path::PathBuf::from("target/debug/kobold");
+    if fallback.exists() {
+        return fallback;
     }
     candidate
 }
