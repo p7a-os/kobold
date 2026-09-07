@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""Streaming TTS sidecar: clauses in on stdin, audio out to the speakers.
+
+This is the piece that makes speech actually stream. Pocket TTS yields decoded
+PCM as soon as it exists, so playback of a clause starts before that clause has
+finished synthesising -- roughly 200ms to first sound rather than
+one-whole-utterance-at-a-time.
+
+Design notes worth keeping:
+
+* One resident process. Model load takes seconds; paying it per clause would
+  dwarf every other latency in the system.
+* One output stream held open for the whole session. Opening a stream costs
+  tens of milliseconds and clicks between utterances.
+* A queue between the reader and the synthesiser, so clause N+1 is synthesised
+  while clause N is still playing. This is what lets generation race ahead of
+  playback.
+* Kyutai report no useful GPU speedup for this model -- it is tiny and runs at
+  batch size 1 -- so CPU is the right target, not a fallback.
+
+Self-installing: on first run it builds a venv at ~/.kobold-tts, installs
+pocket-tts, and re-execs itself there. Nothing to set up by hand. Progress goes
+to stderr, which kobold surfaces in the transcript, because the first run
+downloads a torch wheel and model weights and is not quick.
+
+Pick a voice with KOBOLD_TTS_VOICE (a predefined name, a local audio file, or
+an hf:// path); the default is a predefined one.
+"""
+import os
+import queue
+import sys
+import threading
+
+# A voice is required: state is built by conditioning on a reference. Accepts a
+# predefined name, a local audio path, or an hf:// path.
+VOICE = os.environ.get("KOBOLD_TTS_VOICE", "alba")
+LANG = os.environ.get("KOBOLD_TTS_LANG") or None
+
+
+VENV = os.path.expanduser(os.environ.get("KOBOLD_TTS_VENV", "~/.kobold-tts"))
+PACKAGES = ["pocket-tts", "sounddevice", "numpy"]
+
+
+def note(msg):
+    """Progress line. kobold reads our stderr and shows these in the UI."""
+    print(f"pocket-say: {msg}", file=sys.stderr, flush=True)
+
+
+def die(msg):
+    note(msg)
+    raise SystemExit(1)
+
+
+MIN_PY = (3, 10)
+
+
+def find_interpreter():
+    """Newest python >= 3.10 available.
+
+    The system `python3` is often too old -- 3.9 on Amazon Linux, and on macOS
+    the Xcode one lags -- while a newer interpreter sits right next to it on
+    PATH. Picking it here avoids a failure whose real cause ("requires a newer
+    Python") is buried in pip output.
+    """
+    import shutil
+
+    if sys.version_info[:2] >= MIN_PY:
+        candidates = [sys.executable]
+    else:
+        candidates = []
+    for minor in range(15, MIN_PY[1] - 1, -1):
+        found = shutil.which(f"python3.{minor}")
+        if found:
+            candidates.append(found)
+    return candidates[0] if candidates else None
+
+
+def have_deps():
+    from importlib.util import find_spec
+
+    return all(find_spec(m) for m in ("pocket_tts", "sounddevice", "numpy"))
+
+
+def last_error(text):
+    """The line that actually explains a pip failure.
+
+    pip's final stderr line is usually its own "consider upgrading pip" notice,
+    so reporting the tail verbatim hides the real cause.
+    """
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    errors = [l for l in lines if l.startswith("ERROR:") and "upgrading" not in l]
+    return (errors or lines or ["unknown error"])[0]
+
+
+def bootstrap():
+    """Ensure a venv with the dependencies, then re-exec inside it.
+
+    Returns only when the current interpreter already has everything, so the
+    caller can just carry on.
+    """
+    if have_deps():
+        return
+    # Set before re-exec: if the venv still cannot import, we must fail rather
+    # than re-exec forever.
+    if os.environ.get("KOBOLD_TTS_BOOTSTRAPPED"):
+        die("dependencies still missing after install; check ~/.kobold-tts")
+
+    python = os.path.join(VENV, "bin", "python")
+    if not os.path.exists(python):
+        base = find_interpreter()
+        if base is None:
+            die(
+                f"needs Python {MIN_PY[0]}.{MIN_PY[1]}+ and none was found "
+                f"(this one is {sys.version_info[0]}.{sys.version_info[1]}); "
+                "install a newer python3 and retry /voice"
+            )
+        note(f"creating {VENV} with {base} (first run)")
+        import subprocess as sp
+
+        r = sp.run([base, "-m", "venv", VENV], capture_output=True, text=True)
+        if r.returncode != 0:
+            die("could not create venv: " + last_error(r.stderr))
+
+    note("installing " + ", ".join(PACKAGES) + " — this downloads torch, give it a few minutes")
+    import subprocess
+
+    r = subprocess.run(
+        [python, "-m", "pip", "install", "--quiet", "--upgrade", *PACKAGES],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0:
+        die("install failed: " + last_error(r.stderr + r.stdout))
+
+    note("installed; starting engine")
+    os.environ["KOBOLD_TTS_BOOTSTRAPPED"] = "1"
+    os.execv(python, [python, os.path.abspath(__file__)])
+
+
+def main():
+    bootstrap()
+
+    try:
+        import numpy as np
+        import sounddevice as sd
+    except ImportError as e:
+        die(f"missing dependency ({e.name})")
+
+    try:
+        from pocket_tts import TTSModel
+    except ImportError:
+        die("pocket_tts not installed; pip install pocket-tts")
+
+    note("loading model")
+    model = TTSModel.load_model(language=LANG)
+    state = model.get_state_for_audio_prompt(VOICE)
+    rate = int(getattr(model, "sample_rate", 24000))
+
+    # Bounded so a fast model cannot run arbitrarily far ahead of the ear; an
+    # interrupt should not have seconds of buffered speech to discard.
+    clauses = queue.Queue(maxsize=8)
+
+    stream = sd.OutputStream(samplerate=rate, channels=1, dtype="float32")
+    stream.start()
+    print("pocket-say: ready", file=sys.stderr, flush=True)
+
+    def synth():
+        nonlocal state
+        while True:
+            text = clauses.get()
+            if text is None:
+                break
+            try:
+                for pcm in model.generate_audio_stream(state, text):
+                    # Yields torch tensors of shape [samples]. Written as
+                    # produced: waiting for the full clause here would give
+                    # back exactly the latency this file exists to avoid.
+                    if hasattr(pcm, "detach"):
+                        pcm = pcm.detach().cpu().numpy()
+                    stream.write(np.asarray(pcm, dtype="float32").reshape(-1, 1))
+            except Exception as e:  # a bad clause must not end the session
+                print(f"pocket-say: synth failed: {e}", file=sys.stderr, flush=True)
+
+    threading.Thread(target=synth, daemon=True).start()
+
+    for line in sys.stdin:
+        text = line.strip()
+        if not text:
+            continue
+        # Same control line the Rust engine understands, so /voice <name> works
+        # whichever engine is configured.
+        if text.startswith(":voice "):
+            name = text[len(":voice "):].strip()
+            try:
+                state = model.get_state_for_audio_prompt(name)
+                note(f"voice {name}")
+            except Exception as e:
+                note(f"voice: {e}")
+            continue
+        clauses.put(text)
+    clauses.put(None)
+    stream.stop()
+    stream.close()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

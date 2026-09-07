@@ -1,0 +1,55 @@
+name: Bug Report
+description: Create a report to help us improve Kobold
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: version
+    attributes:
+      label: Kobold Version
+      description: What version of Kobold are you running? (Run `kobold --version`)
+      placeholder: e.g. kobold 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating System & Architecture
+      description: OS and CPU architecture
+      placeholder: e.g. macOS Sonoma (arm64), Ubuntu 24.04 (x86_64)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run '...'
+        2. Enter prompt '...'
+        3. See error '...'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Output
+      description: Paste any relevant terminal logs, stack traces, or transcript records.
+      render: shell

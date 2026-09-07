@@ -1,0 +1,27 @@
+[package]
+name = "kobold-proto"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["Dario Farzati"]
+rust-version = "1.93"
+description = "Northbound and Southbound wire protocol types for Kobold"
+repository = "https://github.com/p7a-os/kobold"
+homepage = "https://github.com/p7a-os/kobold"
+
+# The types Kobold and an adapter both need, and nothing else. Deliberately
+# its own crate rather than a module of either: an adapter must not depend on
+# the TUI, and Kobold must not depend on a provider. Anything here is on the
+# wire between two processes, so adding to it is a protocol change.
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+sonic-rs = "0.5"
+
+# Property-based testing. `default-features = false` deliberately: the default
+# set pulls `fork` and `timeout`, which spawn subprocesses to isolate a failing
+# case. That is the platform-risky half, on a project with two targets and no
+# CI, and it buys nothing here -- these properties are pure functions that
+# cannot hang or abort. Shrinking, which is the entire reason to prefer
+# proptest to a loop, does not depend on it.
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }

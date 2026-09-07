@@ -1,0 +1,28 @@
+[package]
+name = "kobold-tts"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["Dario Farzati"]
+rust-version = "1.93"
+description = "Embedded neural text-to-speech engine for Kobold using Pocket-TTS"
+repository = "https://github.com/p7a-os/kobold"
+homepage = "https://github.com/p7a-os/kobold"
+
+# Deliberately a separate binary, not a module of kobold. The inference stack
+# is heavy (a matrix-multiply backend and an audio device), kobold is 2.4 MB,
+# and keeping the boundary at a pipe means an alternative engine is a binary
+# swap rather than a rewrite. It also keeps inference off the tokio runtime,
+# which is where the doc's jitter warning applies.
+[dependencies]
+ptts = "0.2"
+xn = "0.1"
+sentencepiece = "0.11"
+# Plain HTTPS against the mirror. hf-hub is gone with the gated repo it
+# existed to authenticate against; ureq was already underneath it.
+ureq = "3"
+# Verifying what the mirror served. Both are already in the workspace lock.
+sha2 = "0.10"
+hex = "0.4"
+cpal = "0.18"
+anyhow = "1"

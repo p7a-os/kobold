@@ -1,0 +1,23 @@
+# Required by `kobold-tts`, not by the client, and not for NEON.
+#
+# NEON is baseline-mandatory on aarch64 -- `rustc --print cfg` lists it with no
+# flags at all -- so this cannot be what provides it. The real requirement is
+# `fp16` (LLVM's `fullfp16`), reached through kobold-tts -> xn -> gemm ->
+# gemm-f16 -> gemm-common, which hand-writes NEON assembly over half-precision
+# vector registers (`fmul v0.8h, v1.8h, v2.8h`). Without it that crate fails to
+# compile, by name: `error: instruction requires: fullfp16`. The TUI alone
+# builds clean with no CPU flags whatsoever.
+#
+# `target-cpu=native` rather than `-C target-feature=+fp16` because the engine
+# is matrix-multiply bound and native is worth far more to it: measured at 36
+# target features against 2 for the explicit feature alone.
+#
+# Tuning the binary to its build host is safe here because building from source
+# on each machine is the only way Kobold is installed -- there is no
+# cross-compilation, no CI and no release pipeline, and both targets (this
+# Linux box and an Apple Silicon Mac) resolve `native` to a CPU that has fp16.
+# Verified on an M4. If a future host's detection is ever stale, the failure
+# surfaces as the compile error above and reads like a code fault; adding
+# "-C", "target-feature=+fp16" here stacks with native at no cost and pins it.
+[build]
+rustflags = ["-C", "target-cpu=native"]

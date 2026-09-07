@@ -1,0 +1,108 @@
+[workspace]
+members = ["kobold-adapter-acp", "kobold-adapter-tmux", "kobold-core", "kobold-openai", "kobold-proto", "kobold-tts"]
+# Without this, `cargo build` in a workspace that has a root package builds only
+# the root package, so kobold-tts silently never gets built.
+default-members = [".", "kobold-adapter-acp", "kobold-adapter-tmux", "kobold-core", "kobold-openai", "kobold-proto", "kobold-tts"]
+
+[package]
+name = "kobold"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["Dario Farzati"]
+description = "Fast, lightweight autonomous agent harness and supervisor"
+repository = "https://github.com/p7a-os/kobold"
+homepage = "https://github.com/p7a-os/kobold"
+readme = "README.md"
+default-run = "kobold"
+keywords = ["ai", "agent", "tui", "harness", "acp"]
+categories = ["command-line-utilities", "development-tools"]
+# A floor, where `rust-toolchain.toml` is the pin. The two answer different
+# questions: rustup honours the pin, but a build that bypasses rustup -- a
+# distro cargo, a container without it -- ignores the file entirely, and this
+# is what makes that fail saying the toolchain is too old instead of failing
+# somewhere confusing.
+#
+# Verified rather than guessed: 1.93.1, the oldest cargo known to be in use
+# here, builds the crate and passes the suite. It is the oldest tried, not
+# necessarily the true minimum.
+rust-version = "1.93"
+
+[dependencies]
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "net", "io-util", "time", "process", "sync", "macros", "signal"] }
+hyper = { version = "1.11", default-features = false, features = ["client", "http1"] }
+hyper-util = { version = "0.1", default-features = false, features = ["client", "client-legacy", "tokio"] }
+hyper-rustls = { version = "0.27", default-features = false, features = ["http1", "webpki-roots", "ring"] }
+fastwebsockets = { version = "0.10", features = ["upgrade", "unstable-split"] }
+kobold-proto = { path = "kobold-proto" }
+kobold-core = { path = "kobold-core" }
+uuid = { version = "1", features = ["v7"] }
+# For the panic hook only: the release profile aborts, so no destructor runs
+# and the adapter has to be signalled directly. See `adapter::kill_live`.
+libc = "0.2"
+sonic-rs = "0.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ring = "0.17"
+tempfile = "3"
+bytes = "1"
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "1.0.9"
+http-body-util = "0.1.5"
+# scrolling-regions gives Backend::scroll_region_{up,down}, which is what lets a
+# scrolling transcript cost a few bytes instead of a full repaint. The comment
+# has to sit above the line: TOML forbids comments inside an inline table, and
+# forbids one spanning lines at all. Older cargo accepted both; newer cargo
+# rejects the manifest outright.
+ratatui = { version = "0.30", default-features = false, features = ["crossterm", "layout-cache", "scrolling-regions"] }
+crossterm = { version = "0.29", features = ["event-stream"] }
+# Both already arrive under ratatui-core; naming them here only makes the
+# dependency direct. Wrapping has to measure in the same units the painter
+# writes in -- grapheme clusters and terminal cells -- or wide text silently
+# overflows the margin and loses its tail to the clip.
+unicode-segmentation = "1"
+# Tool sources are behind a `dyn` trait so a test can fake one instead of
+# needing a live MCP server, and native async-fn-in-trait is not dyn-compatible.
+async-trait = "0.1"
+futures-util = { version = "0.3.34", default-features = false, features = ["std"] }
+mimalloc = { version = "0.1", default-features = false, optional = true }
+# Only for `bench termina`, which compares what the two backends put on the
+# wire for identical frames. Optional so the shipped binary never links them.
+termina = { version = "0.3", optional = true }
+ratatui-termina = { version = "0.1", default-features = false, features = ["scrolling-regions", "underline-color"], optional = true }
+
+[features]
+# Swap the system allocator for mimalloc. Off by default, and the measurement
+# is why: it takes ~11% off a frame (144us -> 128us at 100x30) but raises
+# resident memory from 5.1 MB to 12.8 MB, because it commits its arenas up
+# front. That was a good trade when a frame made ~37k allocations; now that the
+# transcript layout is memoised it makes ~190, and 15us is not worth 2.5x the
+# footprint. `MIMALLOC_ARENA_EAGER_COMMIT=0` brings it back to 5.7 MB if you
+# want both.
+fast-alloc = ["dep:mimalloc"]
+# Adds the `termina` scenario to the bench binary, which needs both backends
+# linked at once to compare them.
+termina-ab = ["dep:termina", "dep:ratatui-termina"]
+# Encode frames with termina instead of crossterm. Output only: raw mode, the
+# alternate screen, bracketed paste and every key still go through crossterm.
+termina-out = ["dep:termina", "dep:ratatui-termina"]
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# Property-based testing. `default-features = false` for the same reason as
+# kobold-proto: the default set pulls `fork` and `timeout`, which isolate a
+# failing case in a subprocess. That is the platform-risky half on a project
+# with two targets and no CI, and shrinking -- the whole reason to prefer
+# proptest to a loop -- does not depend on it.
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
+tempfile = "3"
+serde_json = "1"
+kobold-adapter-acp = { path = "kobold-adapter-acp" }
+kobold-adapter-tmux = { path = "kobold-adapter-tmux" }

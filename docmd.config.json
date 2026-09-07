@@ -1,0 +1,106 @@
+{
+  "title": "Kobold Documentation",
+  "url": "https://p7a-os.github.io/kobold",
+  "src": "docs",
+  "out": "site",
+  "engine": "js",
+  "layout": {
+    "spa": true,
+    "header": {
+      "enabled": true
+    },
+    "sidebar": {
+      "collapsible": true,
+      "defaultCollapsed": false
+    },
+    "optionsMenu": {
+      "position": "sidebar-top",
+      "components": {
+        "search": true,
+        "themeSwitch": true
+      }
+    },
+    "footer": {
+      "style": "minimal",
+      "content": "© 2026 Dario Farzati. AGPL-3.0 Licensed.",
+      "branding": true
+    }
+  },
+  "theme": {
+    "name": "default",
+    "appearance": "dark",
+    "codeHighlight": true
+  },
+  "minify": true,
+  "autoTitleFromH1": true,
+  "copyCode": true,
+  "pageNavigation": true,
+  "navigation": [
+    { "title": "Overview", "path": "/", "icon": "home" },
+    {
+      "title": "Architecture",
+      "icon": "cpu",
+      "collapsible": true,
+      "children": [
+        { "title": "System Architecture", "path": "/architecture/" },
+        { "title": "The Dual-Seam Model", "path": "/architecture/seams" },
+        { "title": "AG-UI Protocol Specification", "path": "/agui" },
+        { "title": "Execution Kernel", "path": "/architecture/kernel" },
+        { "title": "Transcript DAG", "path": "/architecture/transcripts" }
+      ]
+    },
+    {
+      "title": "Adapters",
+      "icon": "plug",
+      "collapsible": true,
+      "children": [
+        { "title": "Adapters Overview", "path": "/adapters/" },
+        { "title": "Agent Client Protocol (ACP)", "path": "/adapters/acp" },
+        { "title": "Headless Tmux & Persistent PTY", "path": "/adapters/tmux-pty" },
+        { "title": "OpenAI Responses WebSocket", "path": "/adapters/openai" }
+      ]
+    },
+    {
+      "title": "Configuration & Security",
+      "icon": "shield-check",
+      "collapsible": true,
+      "children": [
+        { "title": "Settings & Environment", "path": "/configuration/settings" },
+        { "title": "MCP Sandbox", "path": "/configuration/mcp" },
+        { "title": "Worktrees & UI Leases", "path": "/configuration/worktrees" }
+      ]
+    },
+    {
+      "title": "User Guides",
+      "icon": "terminal",
+      "collapsible": true,
+      "children": [
+        { "title": "Terminal UI (TUI)", "path": "/usage/tui" },
+        { "title": "Web Companion UI", "path": "/usage/web-companion" },
+        { "title": "CLI & Daemons", "path": "/usage/cli" }
+      ]
+    },
+    {
+      "title": "Performance",
+      "icon": "gauge",
+      "collapsible": true,
+      "children": [
+        { "title": "Performance & Memory Audit", "path": "/performance/benchmarks" }
+      ]
+    },
+    {
+      "title": "GitHub",
+      "path": "https://github.com/p7a-os/kobold",
+      "icon": "github",
+      "external": true
+    }
+  ],
+  "plugins": {
+    "git": {
+      "commitHistory": false
+    },
+    "seo": {
+      "defaultDescription": "Kobold: Fast, lightweight autonomous agent harness and supervisor."
+    }
+  }
+}

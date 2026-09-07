@@ -1,0 +1,60 @@
+Pocket-TTS model weights
+========================
+
+These files are redistributed, unmodified, from the Pocket-TTS model
+published by Kyutai.
+
+  Model      Pocket-TTS (approximately 100M parameters)
+  Author     Kyutai
+  Source     https://huggingface.co/kyutai/pocket-tts
+  License    Creative Commons Attribution 4.0 International (CC-BY-4.0)
+             https://creativecommons.org/licenses/by/4.0/
+
+CC-BY-4.0 permits redistribution and commercial use provided attribution
+is given. This notice is that attribution, and it must accompany these
+files wherever they are served or bundled.
+
+No changes have been made to the weights, the tokenizer or the voice
+embeddings. They are byte-for-byte what the upstream repository serves.
+If a future version of this bundle quantises or otherwise alters them,
+CC-BY-4.0 requires that the change be stated here.
+
+
+Acceptable use
+--------------
+
+The upstream repository is gated: anyone downloading from Hugging Face
+must first accept the model's terms. Anyone fetching these files from a
+mirror does not pass through that gate, so the terms are reproduced here
+instead of being quietly dropped. This is a voice model, and the reason
+the terms exist is the reason they should travel with it.
+
+Do not use this model for:
+
+  - voice impersonation or cloning without explicit and lawful consent
+  - misinformation, disinformation or deception, including fabricated
+    news and fraudulent calls
+  - presenting generated audio as a genuine recording of a real person
+    or event
+  - generating unlawful, harmful, libelous, abusive, harassing,
+    discriminatory, hateful or privacy-invasive content
+
+Kyutai disclaims all liability for non-compliant use.
+
+The wording above is a good-faith reproduction, not the authoritative
+text. The model card at https://huggingface.co/kyutai/pocket-tts is
+where the terms actually live, and it governs if the two ever differ.
+
+
+Contents
+--------
+
+  tts_b6369a24.safetensors   the model weights
+  tokenizer.model            SentencePiece tokenizer
+  embeddings/<voice>.safetensors
+                             precomputed per-voice conditioning
+
+SHA256SUMS carries a checksum for every file above. Verify after
+downloading:
+
+  sha256sum -c SHA256SUMS

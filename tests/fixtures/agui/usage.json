@@ -1,0 +1,65 @@
+{
+  "_provenance": "TRANSCRIBED FROM SPEC TEST SOURCE -- see README.md. The payloads are the specification's, taken from sdks/typescript/packages/proto/__tests__/usage-roundtrip.test.ts at commit e42bdbe. The JSON encoding is ours: the originals are TypeScript object literals, so this file is a transcription and carries our transcription bugs, not the spec's authority. Licence: LICENSE.ag-ui-typescript.",
+  "_why_here": "null-omission.json covers almost every event type but carries no usage entries at all, and RUN_FINISHED.usage is where kobold_proto::Usage breaks -- camelCase, an array, every count optional, and two counts we have no field for. These are the cases that pin the fold from Vec<TokenUsage> to Kobold's flat gauge.",
+  "cases": [
+    {
+      "name": "run_finished_with_a_single_fully_populated_usage_entry",
+      "note": "Every field set. reasoningTokens and cachedInputTokens have no counterpart in kobold_proto::Usage.",
+      "event": {
+        "type": "RUN_FINISHED",
+        "threadId": "t-1",
+        "runId": "r-1",
+        "usage": [
+          {
+            "provider": "anthropic",
+            "model": "claude-sonnet-4",
+            "inputTokens": 100,
+            "outputTokens": 50,
+            "totalTokens": 150,
+            "reasoningTokens": 20,
+            "cachedInputTokens": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_finished_with_multiple_usage_entries_per_model",
+      "note": "The reason usage is an array. A fold that reads entry [0] and stops loses the second model entirely, and nothing about the shape makes that visible.",
+      "event": {
+        "type": "RUN_FINISHED",
+        "threadId": "t-1",
+        "runId": "r-1",
+        "usage": [
+          { "provider": "openai", "model": "gpt-4o", "inputTokens": 100, "outputTokens": 20, "totalTokens": 120 },
+          { "provider": "openai", "model": "gpt-4o-mini", "inputTokens": 10, "outputTokens": 5, "totalTokens": 15 }
+        ]
+      }
+    },
+    {
+      "name": "run_finished_with_usage_alongside_outcome_and_result",
+      "note": "A totalTokens with no inputTokens or outputTokens. Any fold that computes a total by summing input and output reports zero here.",
+      "event": {
+        "type": "RUN_FINISHED",
+        "threadId": "t-1",
+        "runId": "r-1",
+        "outcome": { "type": "success" },
+        "result": { "answer": 42 },
+        "usage": [{ "provider": "anthropic", "totalTokens": 7 }]
+      }
+    },
+    {
+      "name": "run_error_with_partial_usage",
+      "note": "Usage on a FAILED run, and an inputTokens with no total. A run that died after billing still costs money, and Kobold's Update::Failed carries no usage at all today.",
+      "event": {
+        "type": "RUN_ERROR",
+        "message": "boom",
+        "usage": [{ "provider": "anthropic", "inputTokens": 100 }]
+      }
+    },
+    {
+      "name": "legacy_run_finished_with_no_usage_key_at_all",
+      "note": "Absent, not zero. The distinction kobold_proto::Usage's own doc comment exists to protect.",
+      "event": { "type": "RUN_FINISHED", "threadId": "t-1", "runId": "r-1" }
+    }
+  ]
+}

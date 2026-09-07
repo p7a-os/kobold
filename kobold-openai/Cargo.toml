@@ -1,0 +1,50 @@
+[package]
+name = "kobold-openai"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["Dario Farzati"]
+rust-version = "1.93"
+description = "OpenAI Realtime Responses streaming adapter for Kobold"
+repository = "https://github.com/p7a-os/kobold"
+homepage = "https://github.com/p7a-os/kobold"
+
+# The OpenAI Responses implementation, and nothing else. A library because
+# Kobold links it while the switch to a sub-process is still ahead, and a
+# binary because that switch is what it exists for.
+#
+# Everything provider-specific lives here: the wire types, the WebSocket
+# transport, and the task that turns one into `kobold-proto` messages. Kobold
+# keeps the conversation, the terminal, the tools and MCP.
+[dependencies]
+kobold-proto = { path = "../kobold-proto" }
+tokio = { version = "1", default-features = false, features = ["rt", "net", "io-util", "io-std", "time", "sync", "macros"] }
+hyper = { version = "1.11", default-features = false, features = ["client", "http1"] }
+hyper-util = { version = "0.1", default-features = false, features = ["client", "client-legacy", "tokio"] }
+hyper-rustls = { version = "0.27", default-features = false, features = ["http1", "webpki-roots", "ring"] }
+fastwebsockets = { version = "0.10", features = ["upgrade"] }
+sonic-rs = "0.5"
+serde = { version = "1", features = ["derive"] }
+bytes = "1"
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "1.0.9"
+http-body-util = "0.1.5"
+
+[dev-dependencies]
+kobold-proto = { path = "../kobold-proto" }
+# `test-util` only, and only here. It is what lets the rotation tests move a
+# 55-minute deadline without waiting 55 minutes -- the alternative is a
+# wall-clock sleep, which is the timing guess this repo does not allow. Kept
+# out of `[dependencies]` so the shipped adapter's feature set is unchanged;
+# `cargo build -p kobold-openai` must not gain a feature because a test wanted
+# one.
+tokio = { version = "1", default-features = false, features = ["test-util", "rt", "macros", "time"] }
+
+[lib]
+name = "kobold_openai"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kobold-openai"
+path = "src/main.rs"

@@ -1,0 +1,30 @@
+[package]
+name = "kobold-core"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["Dario Farzati"]
+rust-version = "1.93"
+description = "Core daemon, kernel, and harness primitives for Kobold"
+repository = "https://github.com/p7a-os/kobold"
+homepage = "https://github.com/p7a-os/kobold"
+
+[dependencies]
+kobold-proto = { path = "../kobold-proto" }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "net", "io-util", "time", "process", "sync", "macros"] }
+sonic-rs = "0.5"
+serde = { version = "1", features = ["derive"] }
+bytes = "1"
+libc = "0.2"
+async-trait = "0.1"
+futures-util = { version = "0.3.34", default-features = false, features = ["std"] }
+fastrand = "2"
+fastwebsockets = { version = "0.10", features = ["upgrade", "unstable-split"] }
+hyper = { version = "1.11", default-features = false, features = ["server", "http1"] }
+hyper-util = { version = "0.1", default-features = false, features = ["tokio", "server", "server-auto"] }
+http-body-util = "0.1.5"
+uuid = { version = "1", features = ["v7"] }
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
+tempfile = "3"

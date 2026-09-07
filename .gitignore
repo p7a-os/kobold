@@ -1,0 +1,33 @@
+target/
+traffic.bin
+mutants.out/
+mutants.out.old/
+# Local session log: contains conversation text.
+.kobold/
+.envrc
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# The repo root ignores Cargo.lock and bin/. Both are wrong for a binary
+# crate: the lockfile is what makes a build reproducible, and src/bin/ holds
+# the measurement probe.
+!Cargo.lock
+!src/bin/
+
+# Model payload. 225 MB of weights does not belong in a repo whose binary is
+# 2.7 MB, and everyone cloning would pay for it whether or not they build the
+# speech engine. The bundle's NOTICE, SHA256SUMS and scripts stay tracked, so
+# what is published is reviewable even though the payload is not -- see
+# assets/README.md for repopulating a fresh clone.
+assets/**/*.safetensors
+assets/**/tokenizer.model
+
+# Documentation and packaging build output
+site/
+book/
+dist/
+

@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Play audio streamed from a remote kobold.
+
+Run this on the machine with speakers, then SSH with a reverse tunnel:
+
+    ./tools/kobold-play &
+    ssh -R 7077:localhost:7077 <host>
+
+kobold connects to 127.0.0.1:7077 on the server; SSH carries it here.
+
+Wire format: repeated [4-byte big-endian length][WAV file]. One complete WAV per
+utterance, so playback needs no decoding and utterances cannot run together.
+"""
+import os
+import shutil
+import socket
+import subprocess
+import sys
+import tempfile
+
+PORT = int(os.environ.get("KOBOLD_AUDIO_PORT", "7077"))
+
+
+def player():
+    for cmd in (["afplay"], ["paplay"], ["aplay", "-q"],
+                ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"]):
+        if shutil.which(cmd[0]):
+            return cmd
+    sys.exit("no audio player found (tried afplay, paplay, aplay, ffplay)")
+
+
+def read_exactly(conn, n):
+    buf = b""
+    while len(buf) < n:
+        part = conn.recv(n - len(buf))
+        if not part:
+            return None
+        buf += part
+    return buf
+
+
+def main():
+    play = player()
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind(("127.0.0.1", PORT))
+    srv.listen(1)
+    print(f"kobold-play: listening on 127.0.0.1:{PORT}, playing with {play[0]}", flush=True)
+
+    while True:
+        conn, _ = srv.accept()
+        try:
+            while True:
+                head = read_exactly(conn, 4)
+                if head is None:
+                    break
+                blob = read_exactly(conn, int.from_bytes(head, "big"))
+                if blob is None:
+                    break
+                # Played synchronously: utterances are already ordered upstream,
+                # and overlapping them would garble the speech.
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                    f.write(blob)
+                    path = f.name
+                try:
+                    subprocess.run(play + [path], check=False)
+                finally:
+                    os.unlink(path)
+        finally:
+            conn.close()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

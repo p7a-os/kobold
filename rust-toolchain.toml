@@ -1,0 +1,27 @@
+# The toolchain everyone building kobold gets, pinned so that "works on my
+# machine" and "works on yours" mean the same thing.
+#
+# Without this both ends float on `stable` and drift apart silently. That is
+# not hypothetical here: a comment sat inside an inline table in Cargo.toml for
+# months, which TOML has never allowed, and only surfaced when one machine's
+# cargo got strict enough to reject the manifest outright while the other went
+# on building it happily.
+#
+# rustup reads this file whenever cargo or rustc runs anywhere at or below this
+# directory, downloading the toolchain on first use. Nothing has to be
+# installed by hand and no shell setup is involved. To move the pin, change the
+# channel here -- that is the whole procedure, and it lands in review like any
+# other change rather than happening to one machine at a time.
+#
+# Do not assume a newer toolchain is the pickier one. Measured on the very bug
+# that prompted this file: cargo 1.93.1 rejects a comment inside an inline
+# table, and 1.97.1 accepts it. Cargo got more permissive, not less, so pinning
+# forward means pinning to the end that notices less. Both build the crate and
+# pass the suite; 1.97.1 is the pin because it is current and everything here
+# is verified against it, not because it is stricter. `tests/manifest.rs` is
+# what actually guards the manifests now, on whichever toolchain is in use.
+[toolchain]
+channel = "1.97.1"
+# clippy is part of the build discipline here, not an optional extra, and
+# rustfmt keeps a mixed-toolchain team from reformatting each other's code.
+components = ["rustfmt", "clippy"]

@@ -1,0 +1,61 @@
+{
+  "_provenance": "OURS, NOT THE SPECIFICATION'S. No AG-UI adapter exists yet, so no conforming provider-shaped stream exists to capture. The AG-UI event shapes here were written by us. What is NOT ours is the material inside them: every id and the summary text were observed on the wire from the Responses WebSocket API on 2026-08-22, in the probe recorded in docs/agui.md. Carries no upstream licence -- nothing here is copied from the AG-UI repository.",
+  "_why_here": "See README.md. The spec-derived files test whether we read the specification right. This one tests whether a real provider stream fits inside what the specification allows. They fail differently and neither substitutes for the other.",
+  "cases": [
+    {
+      "name": "run_started_with_a_real_response_id",
+      "note": "Observed. A provider run id is not a UUID and not hyphenated -- it is `resp_` plus 48 hex characters. ag-ui-core 0.1.0 rejects this, and rejects the spec's own `run-5678` too, so this is not the only payload that catches that defect. It is the one that catches a LENGTH assumption, which no spec fixture here does.",
+      "event": {
+        "type": "RUN_STARTED",
+        "threadId": "main",
+        "runId": "resp_04162215aeedcca3016a89342ae8cc87d1bf19f10c404d929f"
+      }
+    },
+    {
+      "name": "reasoning_message_carrying_a_real_summary_delta",
+      "note": "Observed verbatim, first delta of a reasoning summary. Three things at once: markdown emphasis the renderer will interpret, a REAL NEWLINE inside the delta, and a multi-token delta rather than a single word. The newline is the case kobold-proto/src/codec.rs rests on -- it must survive as an escape and keep the message on one line.",
+      "event": {
+        "type": "REASONING_MESSAGE_CONTENT",
+        "messageId": "rs_04162215aeedcca3016a89342b95dc87d1a2a3773352a29946",
+        "delta": "**Calculating multiplication**\n\nI"
+      }
+    },
+    {
+      "name": "reasoning_message_with_a_non_ascii_delta",
+      "note": "Observed. A curly apostrophe (U+2019) inside reasoning text. Not exotic -- the model produced it unprompted on a two-sentence arithmetic summary, so it is the common case rather than the edge one.",
+      "event": {
+        "type": "REASONING_MESSAGE_CONTENT",
+        "messageId": "rs_04162215aeedcca3016a89342b95dc87d1a2a3773352a29946",
+        "delta": "I’ll"
+      }
+    },
+    {
+      "name": "reasoning_bracketed_by_start_and_end",
+      "note": "Shapes are ours; the id is observed. This pair is the whole argument for consuming the reasoning family -- it is what makes a silent gap explicable rather than indistinguishable from a wedge. The measured gap before any output was 435 seconds.",
+      "events": [
+        { "type": "REASONING_START", "messageId": "rs_04162215aeedcca3016a89342b95dc87d1a2a3773352a29946" },
+        { "type": "REASONING_END", "messageId": "rs_04162215aeedcca3016a89342b95dc87d1a2a3773352a29946" }
+      ]
+    },
+    {
+      "name": "run_finished_with_usage_folded_from_a_real_provider_report",
+      "note": "The counts are observed: the provider reported input_tokens 18, output_tokens 52, total_tokens 70, and output_tokens_details.reasoning_tokens 38 -- 38 of 52 output tokens were reasoning, on a prompt asking for 17 times 23. Kobold's Usage reads none of the nested detail today. Shown here already folded into AG-UI's flat TokenUsage, which is the adapter's job.",
+      "event": {
+        "type": "RUN_FINISHED",
+        "threadId": "main",
+        "runId": "resp_04162215aeedcca3016a89342ae8cc87d1bf19f10c404d929f",
+        "usage": [
+          {
+            "provider": "openai",
+            "model": "gpt-5.6-luna",
+            "inputTokens": 18,
+            "outputTokens": 52,
+            "totalTokens": 70,
+            "reasoningTokens": 38,
+            "cachedInputTokens": 0
+          }
+        ]
+      }
+    }
+  ]
+}

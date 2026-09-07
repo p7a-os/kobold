@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kobold Companion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    pre, code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #3f3f46;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Header Navigation -->
+  <header class="h-14 border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center font-bold text-white shadow-lg shadow-brand-500/20">
+        K
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-zinc-100 tracking-tight text-sm">Kobold Web Companion</span>
+        <span id="session-badge" class="px-2 py-0.5 text-xs font-mono rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50">default</span>
+      </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="flex items-center gap-4">
+      <div id="lanes-bar" class="flex items-center gap-1.5 bg-zinc-900/90 p-1 rounded-lg border border-zinc-800">
+        <button class="lane-btn px-2.5 py-1 rounded text-xs font-medium bg-brand-600 text-white shadow-sm" data-lane="main">main</button>
+      </div>
+
+      <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800">
+        <div id="status-dot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+        <span id="status-text" class="text-xs font-medium text-zinc-400">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 flex flex-col max-w-5xl w-full mx-auto p-4 sm:p-6 overflow-hidden">
+    
+    <!-- Interrupt Banner (Modal / Notification) -->
+    <div id="interrupt-card" class="hidden mb-4 p-4 rounded-xl border border-amber-500/40 bg-amber-950/20 backdrop-blur-sm shadow-xl shadow-amber-950/10 transition-all">
+      <div class="flex items-start gap-3">
+        <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h4 class="text-sm font-semibold text-amber-200">Interactive Confirmation Required</h4>
+          <p id="interrupt-question" class="text-sm text-zinc-300 mt-1 font-mono">Do you want to proceed?</p>
+          <div class="mt-3 flex items-center gap-2">
+            <button id="interrupt-yes-btn" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-xs font-medium text-white transition shadow-sm">
+              Approve (Yes)
+            </button>
+            <button id="interrupt-no-btn" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition">
+              Reject (No)
+            </button>
+            <input id="interrupt-custom-input" type="text" placeholder="Custom answer..." class="flex-1 max-w-xs px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-brand-500">
+            <button id="interrupt-submit-btn" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition">
+              Submit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transcript Box -->
+    <div id="transcript-box" class="flex-1 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 p-4 sm:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4">
+      <div class="text-center py-12 text-zinc-500 text-xs">
+        Kobold Northbound AG-UI stream initialized. Messages and execution updates will appear here.
+      </div>
+    </div>
+
+    <!-- Input Form -->
+    <div class="mt-4">
+      <form id="prompt-form" class="relative flex items-end gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-2 focus-within:border-brand-500/80 transition-all shadow-xl shadow-black/40">
+        <textarea
+          id="prompt-input"
+          rows="2"
+          placeholder="Ask Kobold or dispatch a prompt (Enter to send, Shift+Enter for newline)..."
+          class="flex-1 bg-transparent border-none text-sm text-zinc-100 placeholder-zinc-500 p-2 focus:outline-none resize-none custom-scrollbar"
+        ></textarea>
+        <button
+          type="button"
+          id="stop-btn"
+          class="hidden h-9 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-medium flex items-center gap-1.5 transition"
+        >
+          <span>Stop</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <button
+          type="submit"
+          id="send-btn"
+          class="h-9 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition shadow-sm shadow-brand-600/30"
+        >
+          <span>Send</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      ws: null,
+      lane: 'main',
+      token: '',
+      activeInterrupt: null,
+      lanes: new Set(['main']),
+      readOnly: false,
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    state.token = urlParams.get('token') || localStorage.getItem('kobold_token') || '';
+    if (urlParams.get('token')) {
+      localStorage.setItem('kobold_token', urlParams.get('token'));
+    }
+
+    const sessionBadge = document.getElementById('session-badge');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const transcriptBox = document.getElementById('transcript-box');
+    const promptForm = document.getElementById('prompt-form');
+    const promptInput = document.getElementById('prompt-input');
+    const stopBtn = document.getElementById('stop-btn');
+    const interruptCard = document.getElementById('interrupt-card');
+    const interruptQuestion = document.getElementById('interrupt-question');
+    const interruptYesBtn = document.getElementById('interrupt-yes-btn');
+    const interruptNoBtn = document.getElementById('interrupt-no-btn');
+    const interruptCustomInput = document.getElementById('interrupt-custom-input');
+    const interruptSubmitBtn = document.getElementById('interrupt-submit-btn');
+
+    function connectWS() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const wsUrl = `${proto}//${host}/ws?token=${encodeURIComponent(state.token)}`;
+
+      statusDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+      statusText.textContent = 'Connecting...';
+
+      try {
+        state.ws = new WebSocket(wsUrl);
+      } catch (err) {
+        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        statusText.textContent = 'Connection Error';
+        return;
+      }
+
+      state.ws.onopen = () => {
+        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        statusText.textContent = 'Live';
+      };
+
+      state.ws.onclose = () => {
+        statusDot.className = 'w-2 h-2 rounded-full bg-zinc-600';
+        statusText.textContent = 'Disconnected';
+        setTimeout(connectWS, 3000);
+      };
+
+      state.ws.onerror = (err) => {
+        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        statusText.textContent = 'Auth Failed / Error';
+      };
+
+      state.ws.onmessage = (evt) => {
+        try {
+          const frame = JSON.parse(evt.data);
+          handleServerFrame(frame);
+        } catch (e) {
+          console.error('Failed to parse frame:', evt.data);
+        }
+      };
+    }
+
+    function handleServerFrame(frame) {
+      if (frame.Snapshot) {
+        renderSnapshot(frame.Snapshot);
+      } else if (frame.Event) {
+        renderEvent(frame.Event);
+      } else if (frame.Notice) {
+        renderNotice(frame.Notice);
+      } else if (frame.StatusChange) {
+        updateStatus(frame.StatusChange);
+      } else if (frame.Error) {
+        renderError(frame.Error);
+      }
+    }
+
+    function renderSnapshot(snap) {
+      state.lane = snap.lane;
+      state.lanes.add(snap.lane);
+      transcriptBox.innerHTML = '';
+
+      if (snap.messages && snap.messages.length > 0) {
+        for (const msg of snap.messages) {
+          appendMessageCard(msg.role, msg.content, msg.id);
+        }
+      }
+
+      if (snap.active_interrupt) {
+        state.activeInterrupt = snap.active_interrupt;
+        showInterrupt(snap.active_interrupt);
+      } else {
+        hideInterrupt();
+      }
+
+      if (snap.status) {
+        updateStatus({ status: snap.status });
+      }
+    }
+
+    function renderEvent(ev) {
+      const event = ev.event;
+      if (!event) return;
+
+      const type = event.type || Object.keys(event)[0];
+      if (type === 'TEXT_MESSAGE_CONTENT' || event.TextMessageContent) {
+        const delta = event.delta || (event.TextMessageContent && event.TextMessageContent.delta) || '';
+        appendOrUpdateAssistantText(delta);
+      } else if (type === 'TOOL_CALL_START' || event.ToolCallStart) {
+        const name = event.tool_call_name || (event.ToolCallStart && event.ToolCallStart.tool_call_name) || 'tool';
+        const id = event.tool_call_id || (event.ToolCallStart && event.ToolCallStart.tool_call_id) || '';
+        appendToolCard(name, id);
+      } else if (type === 'RUN_FINISHED' || event.RunFinished) {
+        currentAssistantMsgEl = null;
+      }
+    }
+
+    let currentAssistantMsgEl = null;
+
+    function appendOrUpdateAssistantText(delta) {
+      if (!currentAssistantMsgEl) {
+        const div = document.createElement('div');
+        div.className = 'flex flex-col gap-1.5 max-w-3xl self-start';
+        div.innerHTML = `
+          <div class="text-[11px] font-semibold text-brand-400 uppercase tracking-wider">Kobold</div>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-sm text-zinc-200 leading-relaxed font-normal whitespace-pre-wrap assistant-content"></div>
+        `;
+        transcriptBox.appendChild(div);
+        currentAssistantMsgEl = div.querySelector('.assistant-content');
+      }
+      currentAssistantMsgEl.textContent += delta;
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function appendMessageCard(role, text, id) {
+      const isUser = role.toLowerCase() === 'user';
+      const div = document.createElement('div');
+      div.className = `flex flex-col gap-1.5 max-w-2xl ${isUser ? 'self-end items-end' : 'self-start items-start'}`;
+      div.innerHTML = `
+        <div class="text-[11px] font-semibold ${isUser ? 'text-zinc-400' : 'text-brand-400'} uppercase tracking-wider">${role}</div>
+        <div class="${isUser ? 'bg-brand-600 text-white' : 'bg-zinc-900 border border-zinc-800 text-zinc-200'} rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm">
+          ${escapeHtml(text)}
+        </div>
+      `;
+      transcriptBox.appendChild(div);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function appendToolCard(name, callId) {
+      const div = document.createElement('div');
+      div.className = 'max-w-md self-start p-3 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs flex items-center gap-2.5';
+      div.innerHTML = `
+        <div class="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center text-zinc-400 font-mono">#</div>
+        <div>
+          <div class="font-medium text-zinc-300">Tool Executed: <span class="font-mono text-brand-400">${escapeHtml(name)}</span></div>
+          <div class="text-[10px] text-zinc-500 font-mono">${escapeHtml(callId)}</div>
+        </div>
+      `;
+      transcriptBox.appendChild(div);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function renderNotice(notice) {
+      if (notice.text && notice.text.includes('read-only')) {
+        state.readOnly = true;
+        statusText.textContent = 'Follower (Read-Only)';
+        statusDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+      }
+      const div = document.createElement('div');
+      div.className = 'py-1 px-3 bg-zinc-900/60 border border-zinc-800/60 rounded-full text-center text-xs text-zinc-400 mx-auto';
+      div.textContent = notice.text;
+      transcriptBox.appendChild(div);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function showInterrupt(intr) {
+      interruptQuestion.textContent = intr.question || 'Action requires confirmation';
+      interruptCard.classList.remove('hidden');
+    }
+
+    function hideInterrupt() {
+      interruptCard.classList.add('hidden');
+      state.activeInterrupt = null;
+    }
+
+    function submitInterruptAnswer(output) {
+      if (!state.activeInterrupt || !state.ws) return;
+      const frame = {
+        SubmitInterrupt: {
+          lane: state.lane,
+          call_id: state.activeInterrupt.call_id,
+          answers: [output]
+        }
+      };
+      state.ws.send(JSON.stringify(frame));
+      hideInterrupt();
+    }
+
+    function updateStatus(statusChange) {
+      const status = statusChange.status;
+      if (status === 'Waiting') {
+        statusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        statusText.textContent = 'Agent Busy...';
+        stopBtn.classList.remove('hidden');
+      } else if (status === 'Ready') {
+        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        statusText.textContent = state.readOnly ? 'Follower (Read-Only)' : 'Live';
+        stopBtn.classList.add('hidden');
+      } else if (status === 'Connecting') {
+        statusDot.className = 'w-2 h-2 rounded-full bg-blue-500 animate-pulse';
+        statusText.textContent = 'Connecting...';
+        stopBtn.classList.add('hidden');
+      } else if (status === 'Gone') {
+        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        statusText.textContent = 'Disconnected / Dead';
+        stopBtn.classList.add('hidden');
+      }
+    }
+
+    stopBtn.onclick = () => {
+      if (!state.ws) return;
+      state.ws.send(JSON.stringify({ CancelTurn: { lane: state.lane } }));
+    };
+
+    interruptYesBtn.onclick = () => submitInterruptAnswer('Yes');
+    interruptNoBtn.onclick = () => submitInterruptAnswer('No');
+    interruptSubmitBtn.onclick = () => {
+      const val = interruptCustomInput.value.trim();
+      if (val) submitInterruptAnswer(val);
+    };
+
+    promptForm.onsubmit = (e) => {
+      e.preventDefault();
+      const text = promptInput.value.trim();
+      if (!text || !state.ws) return;
+
+      appendMessageCard('User', text, 'local');
+      currentAssistantMsgEl = null;
+
+      const frame = {
+        Prompt: {
+          lane: state.lane,
+          text: text
+        }
+      };
+      state.ws.send(JSON.stringify(frame));
+      promptInput.value = '';
+    };
+
+    promptInput.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        promptForm.requestSubmit();
+      }
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    connectWS();
+  </script>
+</body>
+</html>
