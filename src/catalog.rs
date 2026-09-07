@@ -330,7 +330,8 @@ mod tests {
     #[test]
     fn match_model_in_current_harness() {
         let cache = build_models_cache(ALL_HARNESSES);
-        let (h, m) = match_model(&cache, Some("claude-code"), "sonnet-5").expect("match in current");
+        let (h, m) =
+            match_model(&cache, Some("claude-code"), "sonnet-5").expect("match in current");
         assert_eq!(h, HARNESS_CLAUDE_CODE);
         assert_eq!(m, "sonnet-5");
     }

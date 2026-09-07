@@ -220,7 +220,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        if !adapter_args.iter().any(|a| a == "--agent-cmd" || a == "--mock") {
+        if !adapter_args
+            .iter()
+            .any(|a| a == "--agent-cmd" || a == "--mock")
+        {
             let active = cfg.active_harness();
             let agent_exe = match active {
                 kobold::catalog::HARNESS_CLAUDE_CODE => Some("claude"),
@@ -228,16 +231,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 kobold::catalog::HARNESS_CODEX => Some("codex"),
                 kobold::catalog::HARNESS_OPENCODE => Some("opencode"),
                 kobold::catalog::HARNESS_ANTIGRAVITY => Some("agy"),
-                _ => cfg.agents.iter().find(|(_, a)| a.enabled).and_then(|(k, _)| {
-                    match k.as_str() {
+                _ => cfg
+                    .agents
+                    .iter()
+                    .find(|(_, a)| a.enabled)
+                    .and_then(|(k, _)| match k.as_str() {
                         "claude-code" | "claude" => Some("claude"),
                         "grok-build" | "grok" => Some("grok"),
                         "codex" => Some("codex"),
                         "opencode" => Some("opencode"),
                         "antigravity" | "agy" => Some("agy"),
                         _ => None,
-                    }
-                }),
+                    }),
             };
             if let Some(exe) = agent_exe {
                 adapter_args.push("--agent-cmd".into());
@@ -263,16 +268,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         || adapter_cmd.contains("pty")
         || adapter_cmd.contains("acp");
     let (_adapter, cmd_tx, adapter_rx) = if is_unconfined {
-        kobold::adapter::Adapter::spawn_unconfined(&adapter_cmd, &adapter_args, &startup)
-            .await?
+        kobold::adapter::Adapter::spawn_unconfined(&adapter_cmd, &adapter_args, &startup).await?
     } else {
         let allow_hosts = if cfg.adapter_allow.is_empty() {
             vec!["api.openai.com".to_owned()]
         } else {
             cfg.adapter_allow.clone()
         };
-        kobold::adapter::Adapter::spawn(&adapter_cmd, &adapter_args, &startup, &allow_hosts)
-            .await?
+        kobold::adapter::Adapter::spawn(&adapter_cmd, &adapter_args, &startup, &allow_hosts).await?
     };
 
     daemon.run(cmd_tx, adapter_rx, shutdown_rx).await?;

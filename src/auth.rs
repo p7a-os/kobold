@@ -98,7 +98,9 @@ pub async fn openrouter_oauth_flow() -> Result<String, Box<dyn std::error::Error
     println!("\n\x1b[1mOpenRouter OAuth Authentication\x1b[0m");
     println!("Choose authorization method:");
     println!("  \x1b[1m1)\x1b[0m Automatic browser redirect to localhost (desktop default)");
-    println!("  \x1b[1m2)\x1b[0m Copy-paste authorization code from browser (headless / remote SSH)");
+    println!(
+        "  \x1b[1m2)\x1b[0m Copy-paste authorization code from browser (headless / remote SSH)"
+    );
     print!("Selection [1/2, default 1]: ");
     io::stdout().flush()?;
 

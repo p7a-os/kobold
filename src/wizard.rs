@@ -608,7 +608,8 @@ pub async fn run_onboarding_wizard(root: &Path) -> Result<Settings, Box<dyn std:
     if state.provider_checked[0] && !enabled_harnesses.contains(&crate::catalog::HARNESS_OPENAI) {
         enabled_harnesses.push(crate::catalog::HARNESS_OPENAI);
     }
-    if state.provider_checked[1] && !enabled_harnesses.contains(&crate::catalog::HARNESS_OPENROUTER) {
+    if state.provider_checked[1] && !enabled_harnesses.contains(&crate::catalog::HARNESS_OPENROUTER)
+    {
         enabled_harnesses.push(crate::catalog::HARNESS_OPENROUTER);
     }
     if enabled_harnesses.is_empty() {

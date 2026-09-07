@@ -1695,7 +1695,8 @@ fn slash(app: &mut App, speaker: &mut Option<Box<dyn tts::StreamingTts>>, line: 
                     let model_changed = matched_model != cur_model;
 
                     if let Some(root) = &app.root {
-                        let _ = cfg.update_harness_and_model(root, &matched_harness, &matched_model);
+                        let _ =
+                            cfg.update_harness_and_model(root, &matched_harness, &matched_model);
                     }
                     app.harness = matched_harness.clone();
                     app.model = matched_model.clone();

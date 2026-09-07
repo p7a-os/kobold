@@ -3562,7 +3562,10 @@ mod tests {
         let seen = frame(&mut app, 60, 12);
         for cmd in crate::complete::COMMANDS {
             let name = format!("/{}", cmd.name);
-            assert!(seen.contains(&name), "{name} missing from the list:\n{seen}");
+            assert!(
+                seen.contains(&name),
+                "{name} missing from the list:\n{seen}"
+            );
         }
         // Above the prompt, not below it: the row carrying the marker is the
         // input, and every suggestion has to sit before it.
@@ -3614,7 +3617,11 @@ mod tests {
         assert!(app.menu_move(1));
         assert_eq!(app.menu_index(), 0);
         assert!(app.menu_move(-1));
-        assert_eq!(app.menu_index(), total - 1, "up from the first reaches the last");
+        assert_eq!(
+            app.menu_index(),
+            total - 1,
+            "up from the first reaches the last"
+        );
 
         // Tab takes the highlighted entry, not the first.
         assert!(app.complete_slash());
@@ -5669,10 +5676,7 @@ mod tests {
         let mut app = App::new("main", "b0");
         app.pane_mut().set_input("/".into());
         let n = app.menu_rows();
-        assert!(
-            n >= 4,
-            "the fixture needs several rows to tell them apart"
-        );
+        assert!(n >= 4, "the fixture needs several rows to tell them apart");
 
         let area = Rect::new(0, 0, 40, n);
         let bg_of = |app: &App, row: u16| {

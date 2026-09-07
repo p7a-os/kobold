@@ -180,8 +180,13 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Check whether to run in ACP JSON-RPC mode
     let is_acp_mode = force_acp
-        || agent_args.iter().any(|a| a == "acp" || a == "stdio" || a == "--agent")
-        || agent_cmd.as_deref().map(|c| c.contains("mock-acp-agent")).unwrap_or(false);
+        || agent_args
+            .iter()
+            .any(|a| a == "acp" || a == "stdio" || a == "--agent")
+        || agent_cmd
+            .as_deref()
+            .map(|c| c.contains("mock-acp-agent"))
+            .unwrap_or(false);
 
     if is_acp_mode {
         let session_id = uuid::Uuid::now_v7().to_string();
