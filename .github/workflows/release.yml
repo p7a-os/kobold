@@ -53,6 +53,6 @@ jobs:
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'release'
         with:
+          tag_name: v0.1.0
           files: ${{ matrix.artifact_name }}
