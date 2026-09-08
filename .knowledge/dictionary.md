@@ -200,4 +200,13 @@
 - **Source**: `src/doctor.rs:1-6`, `src/main.rs:364-368`
 - **Date**: 2026-09-08
 
+### T-encrypted-reasoning
+- **ID**: T-encrypted-reasoning
+- **Term**: Encrypted Reasoning Item
+- **Definition**: An opaque provider token (`REASONING_ENCRYPTED_VALUE`) that carries reasoning context across turns under zero cloud retention.
+- **Rejected aliases**: `reasoning-state`, `thought-token`
+- **Status**: active
+- **Source**: `docs/agui.md:207-226`
+- **Date**: 2026-09-08
+
 ## History

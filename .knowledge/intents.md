@@ -21,7 +21,7 @@
 ### I-3
 - **ID**: I-3
 - **Statement**: The human wants to be interviewed using the question tool on open product, state machine, and provider integration decisions.
-- **Status**: current
+- **Status**: done
 - **Valid**: current session
 - **Source**: Human specified in user request
 - **Date**: 2026-09-08

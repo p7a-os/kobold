@@ -32,11 +32,15 @@ The user requested a thorough review of the Kobold repository and the initializa
 - `kobold-core/src/sandbox.rs:408-417` notes an unverified assumption regarding macOS Seatbelt handling of Unix domain sockets under network deny policies.
 
 ## 5. Decision
-Initialized `.knowledge/` with canonical terminology and established facts extracted directly from verified codebase files. Created:
-- `.knowledge/dictionary.md`: 22 canonical terms (`T-kobold` through `T-doctor`).
+Initialized `.knowledge/` with canonical terminology, established facts, active intents, and architectural decisions:
+- `.knowledge/dictionary.md`: 23 canonical terms (`T-kobold` through `T-doctor`, plus `T-encrypted-reasoning`).
 - `.knowledge/facts.md`: 13 verified/assumed facts (`F-1` through `F-13`).
-- `.knowledge/intents.md`: 3 active project intents (`I-1` through `I-3`).
-- `.knowledge/decisions.md`: 5 architectural decisions (`D-1` through `D-5`).
+- `.knowledge/intents.md`: 3 intents (`I-1` through `I-3`, with `I-3` marked `done` upon completing the interview).
+- `.knowledge/decisions.md`: 9 architectural decisions (`D-1` through `D-5` from architecture docs, and `D-6` through `D-9` from the user interview):
+  - `D-6`: Freeze prompt queue during parked tool questions until full interaction completes.
+  - `D-7`: Implement AG-UI encrypted reasoning pass-through (`REASONING_ENCRYPTED_VALUE`) under `store: false`.
+  - `D-8`: Prioritize the ACP adapter as the primary multi-agent interface; keep direct streaming focused on OpenAI/OpenRouter.
+  - `D-9`: Retain conversation forks in current workspace by default; create git worktree on demand.
 
 ## 6. Verification
 Follow these steps to run the verification instrument:
@@ -48,11 +52,11 @@ Follow these steps to run the verification instrument:
 3. Confirm that the script exits with code 0 and reports all schema checks passed.
 
 Verification Result:
-The script verified that all four knowledge base files exist, contain `## Current` and `## History` sections, and strictly follow the required ID naming schemas and field structures. All 44 entries passed validation without error.
+The script verified that all four knowledge base files exist, contain `## Current` and `## History` sections, and strictly follow the required ID naming schemas and field structures. All 48 entries passed validation without error.
 
 ## 7. Unverified and risks
 - Fact `F-13`: macOS Seatbelt network-outbound exception for Unix domain sockets remains unverified on live macOS runtime without an active sandbox-exec test pass.
-- Risk: Changes to prompt queue draining during parked tool calls could alter multi-turn interactive session behavior if not aligned with user expectations.
+- Risk: Implementation of `D-6` (freezing prompt queue across tool questions) will require an explicit parked state in `kobold-core::lane::Lane` to prevent queue draining on `Completed` events.
 
 ## 8. Out-of-scope findings
-- `docs/agui.md:576-604` reports that `park_ask` does not touch `pane.status`, allowing queued messages to drain during open questions. Reported as an interview question for human resolution rather than modified unilaterally.
+- `docs/agui.md:576-604` reports that `park_ask` does not touch `pane.status`, allowing queued messages to drain during open questions. Resolved strategically via decision `D-6`; implementation will follow in a subsequent task.

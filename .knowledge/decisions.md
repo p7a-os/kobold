@@ -52,4 +52,44 @@
 - **Source**: `docs/configuration/mcp.md:8-34`, `kobold-core/src/childenv.rs`
 - **Date**: 2026-09-08
 
+### D-6
+- **ID**: D-6
+- **Statement**: Freeze the Prompt Queue during parked tool questions and interrupts until the full multi-turn interaction completes.
+- **Alternatives rejected**: Clearing the queue automatically; prompting the user interactively on every interrupt.
+- **Reason**: Preserves user input and prevents premature execution of queued tasks before tool approvals are resolved.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-08
+
+### D-7
+- **ID**: D-7
+- **Statement**: Implement AG-UI encrypted reasoning pass-through (`REASONING_ENCRYPTED_VALUE`) to preserve multi-turn reasoning continuity under strict zero cloud retention (`store: false`).
+- **Alternatives rejected**: Full transcript replay without reasoning continuity; enabling cloud-side retention (`store: true`).
+- **Reason**: Preserves reasoning context across turns while maintaining zero cloud data retention.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-08
+
+### D-8
+- **ID**: D-8
+- **Statement**: Prioritize the ACP Adapter as the primary interface for autonomous coding agents, restricting direct WebSocket adapters to OpenAI and OpenRouter.
+- **Alternatives rejected**: Building native Anthropic and Google streaming adapters; deprecating direct WebSocket adapters entirely.
+- **Reason**: Leverages external agent ecosystems (Claude Code, Antigravity, Grok, Codex) via standardized ACP while avoiding maintenance of proprietary vendor streaming protocols.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-08
+
+### D-9
+- **ID**: D-9
+- **Statement**: Retain conversation forks in the current workspace directory by default, creating an isolated git worktree only when explicitly requested.
+- **Alternatives rejected**: Automatic git worktree creation on every lane fork.
+- **Reason**: Prevents workspace fragmentation for simple conversational branching while reserving worktree isolation for explicit concurrency.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-08
+
 ## History
