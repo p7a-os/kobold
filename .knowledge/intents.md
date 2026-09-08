@@ -26,4 +26,12 @@
 - **Source**: Human specified in user request
 - **Date**: 2026-09-08
 
+### I-4
+- **ID**: I-4
+- **Statement**: The human wants Kobold to realize the ParadigmaOS vision of a unified Harness and Meta-Harness, evolving beyond single-model execution into multi-model composition, automatic batch routing, egress-injected sandboxing, and multi-surface persistence.
+- **Status**: current
+- **Valid**: permanent
+- **Source**: Human vision document `/Users/luis/w/kobold.pdf:1-4`
+- **Date**: 2026-09-08
+
 ## History

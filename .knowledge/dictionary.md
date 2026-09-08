@@ -218,4 +218,49 @@
 - **Source**: `AGENTS.md:204`, `.agents/skills/habrid/SKILL.md:1-10`
 - **Date**: 2026-09-08
 
+### T-meta-harness
+- **ID**: T-meta-harness
+- **Term**: Meta-Harness
+- **Definition**: An execution supervisor that drives external purpose-built coding agents (Claude Code, Codex, Grok Build) as backends rather than competing with them.
+- **Rejected aliases**: `agent-wrapper`, `orchestrator-of-agents`
+- **Status**: active
+- **Source**: `/Users/luis/w/kobold.pdf:1`
+- **Date**: 2026-09-08
+
+### T-batch-inference
+- **ID**: T-batch-inference
+- **Term**: Batch Inference Routing
+- **Definition**: Automatic offloading of non-interactive tasks (sweeps, migrations, test generation) to provider batch processing lanes at reduced pricing.
+- **Rejected aliases**: `background-queue`, `delayed-inference`
+- **Status**: active
+- **Source**: `/Users/luis/w/kobold.pdf:2`
+- **Date**: 2026-09-08
+
+### T-aleph
+- **ID**: T-aleph
+- **Term**: Aleph
+- **Definition**: The ParadigmaOS project knowledge and memory system that records verified claims, decisions, evidence, and dates to eliminate cold-start sessions.
+- **Rejected aliases**: `project-memory`, `knowledge-store`
+- **Status**: active
+- **Source**: `/Users/luis/w/kobold.pdf:3`
+- **Date**: 2026-09-08
+
+### T-mithlond
+- **ID**: T-mithlond
+- **Term**: Mithlond
+- **Definition**: The ParadigmaOS unified AI gateway providing single-endpoint billing and credential isolation across models, agents, and MCP servers.
+- **Rejected aliases**: `ai-proxy`, `gateway`
+- **Status**: active
+- **Source**: `/Users/luis/w/kobold.pdf:3`
+- **Date**: 2026-09-08
+
+### T-olympus
+- **ID**: T-olympus
+- **Term**: Olympus
+- **Definition**: The ParadigmaOS engineering workflow platform in which Kobold operates autonomously as a supervisor or worker in scheduled pipelines.
+- **Rejected aliases**: `ci-runner`, `workflow-engine`
+- **Status**: active
+- **Source**: `/Users/luis/w/kobold.pdf:3`
+- **Date**: 2026-09-08
+
 ## History

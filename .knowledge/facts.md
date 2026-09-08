@@ -114,4 +114,12 @@
 - **Source**: `AGENTS.md:204`, `.agents/skills/habrid/SKILL.md:1-10`
 - **Date**: 2026-09-08
 
+### F-15
+- **ID**: F-15
+- **Statement**: The ParadigmaOS product vision document (`/Users/luis/w/kobold.pdf`) specifies Kobold as a dual Harness and Meta-Harness providing multi-model composition per task, automated batch inference routing, credential injection at the egress boundary, four surfaces (Terminal, Web, Mobile, Desktop), remote persistent sandboxes, and native hooks into Mithlond, Aleph, and Olympus.
+- **Status**: verified
+- **Valid**: permanent
+- **Source**: `/Users/luis/w/kobold.pdf:1-4`
+- **Date**: 2026-09-08
+
 ## History
