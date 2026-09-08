@@ -209,4 +209,13 @@
 - **Source**: `docs/agui.md:207-226`
 - **Date**: 2026-09-08
 
+### T-habrid
+- **ID**: T-habrid
+- **Term**: Habrid
+- **Definition**: A multi-agent handoff CLI enabling cross-harness discussion threads and peer review between coding agents via Beads.
+- **Rejected aliases**: `agent-handoff`, `beads-bridge`
+- **Status**: active
+- **Source**: `AGENTS.md:204`, `.agents/skills/habrid/SKILL.md:1-10`
+- **Date**: 2026-09-08
+
 ## History

@@ -33,8 +33,8 @@ The user requested a thorough review of the Kobold repository and the initializa
 
 ## 5. Decision
 Initialized `.knowledge/` with canonical terminology, established facts, active intents, and architectural decisions:
-- `.knowledge/dictionary.md`: 23 canonical terms (`T-kobold` through `T-doctor`, plus `T-encrypted-reasoning`).
-- `.knowledge/facts.md`: 13 verified/assumed facts (`F-1` through `F-13`).
+- `.knowledge/dictionary.md`: 24 canonical terms (`T-kobold` through `T-doctor`, `T-encrypted-reasoning`, and `T-habrid`).
+- `.knowledge/facts.md`: 14 verified/assumed facts (`F-1` through `F-14`).
 - `.knowledge/intents.md`: 3 intents (`I-1` through `I-3`, with `I-3` marked `done` upon completing the interview).
 - `.knowledge/decisions.md`: 9 architectural decisions (`D-1` through `D-5` from architecture docs, and `D-6` through `D-9` from the user interview):
   - `D-6`: Freeze prompt queue during parked tool questions until full interaction completes.
@@ -52,7 +52,7 @@ Follow these steps to run the verification instrument:
 3. Confirm that the script exits with code 0 and reports all schema checks passed.
 
 Verification Result:
-The script verified that all four knowledge base files exist, contain `## Current` and `## History` sections, and strictly follow the required ID naming schemas and field structures. All 48 entries passed validation without error.
+The script verified that all four knowledge base files exist, contain `## Current` and `## History` sections, and strictly follow the required ID naming schemas and field structures. All 50 entries passed validation without error.
 
 ## 7. Unverified and risks
 - Fact `F-13`: macOS Seatbelt network-outbound exception for Unix domain sockets remains unverified on live macOS runtime without an active sandbox-exec test pass.

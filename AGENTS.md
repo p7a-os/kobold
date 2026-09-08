@@ -200,3 +200,6 @@ The skill's scan checklist applies to all text in both modes: synonym rotation, 
 ## Governing principle
 
 Check and know. When checking is impossible, say what is unknown. Establish shared meaning before ambiguity reaches the implementation. Evidence outranks convention, observed behavior outranks expectation, current canonical information outranks memory, and explicit uncertainty outranks invented certainty.
+
+
+This project uses habrid. See `.agents/skills/habrid/SKILL.md`.

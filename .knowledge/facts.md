@@ -106,4 +106,12 @@
 - **Source**: `kobold-core/src/sandbox.rs:408-417`
 - **Date**: 2026-09-08
 
+### F-14
+- **ID**: F-14
+- **Statement**: The project integrates Habrid via `.agents/skills/habrid/SKILL.md` and `.codex/skills/habrid/SKILL.md` for multi-agent inquiry and transcript handoff across agent harnesses.
+- **Status**: verified
+- **Valid**: permanent
+- **Source**: `AGENTS.md:204`, `.agents/skills/habrid/SKILL.md:1-10`
+- **Date**: 2026-09-08
+
 ## History
