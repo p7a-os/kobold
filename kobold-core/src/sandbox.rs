@@ -185,51 +185,6 @@ pub fn wrap(policy: Policy, workdir: &Path, argv: &[String]) -> Option<Command> 
 /// to deny `network*` and then re-allow this one path, which is why the
 /// socket has to be threaded this far down rather than handled at the spawn
 /// site.
-#[cfg(target_os = "linux")]
-fn is_bwrap_functional(unshare_net: bool) -> bool {
-    use std::sync::atomic::{AtomicU8, Ordering};
-    static BASIC_STATUS: AtomicU8 = AtomicU8::new(0);
-    static NET_STATUS: AtomicU8 = AtomicU8::new(0);
-
-    let status_cell = if unshare_net {
-        &NET_STATUS
-    } else {
-        &BASIC_STATUS
-    };
-
-    match status_cell.load(Ordering::Relaxed) {
-        1 => return true,
-        2 => return false,
-        _ => {}
-    }
-
-    if !which("bwrap") {
-        status_cell.store(2, Ordering::Relaxed);
-        return false;
-    }
-
-    let sh = resolve("sh").unwrap_or_else(|| std::path::PathBuf::from("/bin/sh"));
-    let mut cmd = std::process::Command::new("bwrap");
-    cmd.args([
-        "--ro-bind",
-        "/usr",
-        "/usr",
-        "--proc",
-        "/proc",
-        "--dev",
-        "/dev",
-        "--unshare-pid",
-    ]);
-    if unshare_net {
-        cmd.arg("--unshare-net");
-    }
-    cmd.arg("--").arg(&sh).args(["-c", "true"]);
-
-    let ok = cmd.output().map(|o| o.status.success()).unwrap_or(false);
-    status_cell.store(if ok { 1 } else { 2 }, Ordering::Relaxed);
-    ok
-}
-
 pub fn wrap_with_socket(
     policy: Policy,
     workdir: &Path,
@@ -238,7 +193,7 @@ pub fn wrap_with_socket(
 ) -> Option<Command> {
     #[cfg(target_os = "linux")]
     {
-        if !is_bwrap_functional(!policy.allow_network) {
+        if !which("bwrap") {
             return None;
         }
         let mut cmd = Command::new("bwrap");
