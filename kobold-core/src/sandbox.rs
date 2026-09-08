@@ -193,6 +193,9 @@ pub fn wrap_with_socket(
 ) -> Option<Command> {
     #[cfg(target_os = "linux")]
     {
+        if !which("bwrap") {
+            return None;
+        }
         let mut cmd = Command::new("bwrap");
         cmd.arg("--die-with-parent")
             .arg("--new-session")
@@ -254,6 +257,9 @@ pub fn wrap_with_socket(
 
     #[cfg(target_os = "macos")]
     {
+        if !which("sandbox-exec") {
+            return None;
+        }
         // Resolved before the profile is written, and this is not hygiene.
         // Seatbelt matches the RESOLVED path: `/tmp` is a symlink to
         // `/private/tmp`, so a rule naming the unresolved spelling never

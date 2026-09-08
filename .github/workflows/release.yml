@@ -33,7 +33,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libasound2-dev pkg-config
+          sudo apt-get install -y cmake libasound2-dev pkg-config bubblewrap
 
       - name: Build release binaries
         env:
