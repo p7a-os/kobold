@@ -2785,11 +2785,10 @@ mod tests {
                     tools: Vec::new(),
                 },
             };
-            let (adapter, cmd_tx, updates) = kobold::adapter::Adapter::spawn(
+            let (adapter, cmd_tx, updates) = kobold::adapter::Adapter::spawn_unconfined(
                 &fake_adapter_path(),
                 &[script.to_owned()],
                 &startup,
-                &[],
             )
             .await
             .expect("spawn the fake adapter");
