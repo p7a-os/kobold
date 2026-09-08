@@ -73,24 +73,26 @@ async fn test_pty_bridge_interactive_prompt_interception_and_answer() {
 
     let (frame_tx, mut frame_rx) = mpsc::unbounded_channel::<OutgoingFrame>();
 
-    use std::io::Write;
-    use std::os::unix::fs::PermissionsExt;
-
-    let mut script = tempfile::NamedTempFile::new().expect("create temp script");
-    writeln!(
-        script,
-        "#!/bin/bash\nread -p 'Do you want to proceed? [y/n] ' ans\necho \"RESULT:$ans\""
+    let dir = tempfile::tempdir().expect("create temp dir");
+    let script_path = dir.path().join("prompt.sh");
+    std::fs::write(
+        &script_path,
+        "#!/bin/bash\nread -p 'Do you want to proceed? [y/n] ' ans\necho \"RESULT:$ans\"\n",
     )
     .expect("write script");
-    let script_path = script.path().to_str().expect("utf8 path").to_string();
-    let mut perms = std::fs::metadata(&script_path).expect("meta").permissions();
-    perms.set_mode(0o755);
-    std::fs::set_permissions(&script_path, perms).expect("chmod");
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(&script_path).expect("meta").permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&script_path, perms).expect("chmod");
+    }
 
     // Send command that executes the script
     let cmd = Command::Send {
         lane: "main".into(),
-        text: script_path,
+        text: format!("bash {}", script_path.display()),
         previous_response_id: None,
         replay: Vec::new(),
     };
