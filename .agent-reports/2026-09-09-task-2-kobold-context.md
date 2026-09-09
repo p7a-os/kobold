@@ -49,7 +49,7 @@ Run the verification instrument:
 
 Observed output:
 - `cargo check -p kobold-context`: exit code 0.
-- `cargo test -p kobold-context`: 9 passed, 0 failed.
+- `cargo test -p kobold-context`: 16 passed, 0 failed.
 - `cargo clippy -p kobold-context`: exit code 0.
 - Dependency audit: no network or process runtime dependencies detected.
 

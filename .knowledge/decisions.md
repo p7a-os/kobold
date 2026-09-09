@@ -312,4 +312,14 @@
 - **Source**: Human decision via interview tool
 - **Date**: 2026-09-09
 
+### D-32
+- **ID**: D-32
+- **Statement**: Extract session assembly, workspace binding, and transcript persistence into a dedicated `crates/kobold-runtime` crate as an in-process Rust SDK, reducing `crates/kobold-server` to a thin IPC daemon over Unix Domain Sockets and WebSockets.
+- **Alternatives rejected**: Monolithic `kobold-server` embedding both networking and session assembly; requiring SDK consumers to wire `kobold-kernel` and its dependencies manually.
+- **Reason**: Enables standalone Rust applications to embed Kobold as a library with zero socket or serialization overhead, while keeping `kobold-server` focused strictly on daemon supervision and multi-client IPC.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-09
+
 ## History

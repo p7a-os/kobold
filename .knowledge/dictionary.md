@@ -65,6 +65,15 @@
 - **Source**: Architecture planning, D-12
 - **Date**: 2026-09-08
 
+### T-kobold-runtime
+- **ID**: T-kobold-runtime
+- **Term**: kobold-runtime
+- **Definition**: The in-process SDK crate that assembles workspace configuration, system prompts, context, tools, and the kernel into a high-level `Session` API with zero socket or IPC overhead.
+- **Rejected aliases**: `kobold-sdk`, `agent-runner`
+- **Status**: active
+- **Source**: Human decision via interview tool, D-32
+- **Date**: 2026-09-09
+
 ### T-event-sink
 - **ID**: T-event-sink
 - **Term**: Event Sink
