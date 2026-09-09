@@ -1377,6 +1377,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "kobold-tool-bash"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "kobold-types",
+ "libc",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+]
+
+[[package]]
+name = "kobold-tool-fs"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "kobold-types",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+]
+
+[[package]]
 name = "kobold-tts"
 version = "0.1.0"
 dependencies = [

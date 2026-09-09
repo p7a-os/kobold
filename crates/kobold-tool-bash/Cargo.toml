@@ -1,0 +1,19 @@
+[package]
+name = "kobold-tool-bash"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+description = "Unified bash execution tool supporting host and microVM sandboxes with APFS CoW checkpoints"
+
+[dependencies]
+kobold-types = { path = "../kobold-types" }
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", default-features = false, features = ["process", "io-util", "sync", "time", "macros", "fs"] }
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }
