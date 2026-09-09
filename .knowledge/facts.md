@@ -122,4 +122,12 @@
 - **Source**: `/Users/luis/w/kobold.pdf:1-4`
 - **Date**: 2026-09-08
 
+### F-16
+- **ID**: F-16
+- **Statement**: Apple's Virtualization.framework supports virtualizing macOS on Apple Silicon (`VZMacOSVirtualMachineConfiguration` since macOS 12 Monterey), but requires a full 14GB+ IPSW restore image, virtual NVRAM, and a 15–30s boot time, making it unsuitable for sub-second ephemeral microVMs. Linux guests (`VZLinuxBootLoader`) boot in ~150ms with 100MB RAM.
+- **Status**: verified
+- **Valid**: permanent
+- **Source**: Apple Virtualization.framework documentation (`VZMacOSVirtualMachineConfiguration`, `VZLinuxBootLoader`)
+- **Date**: 2026-09-09
+
 ## History

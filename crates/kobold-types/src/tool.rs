@@ -8,6 +8,8 @@ pub struct ToolDefinition {
     pub name: String,
     pub description: String,
     pub parameters: serde_json::Value,
+    #[serde(default)]
+    pub is_mutating: bool,
 }
 
 impl ToolDefinition {
@@ -20,7 +22,14 @@ impl ToolDefinition {
             name: name.into(),
             description: description.into(),
             parameters,
+            is_mutating: false,
         }
+    }
+
+    /// Mark this tool as performing filesystem or environmental mutations.
+    pub fn with_mutating(mut self, is_mutating: bool) -> Self {
+        self.is_mutating = is_mutating;
+        self
     }
 }
 
@@ -141,6 +150,14 @@ pub trait Tool: Send + Sync {
 
     /// Definition schema advertised to the model.
     fn definition(&self) -> ToolDefinition;
+
+    /// Whether this tool modifies the filesystem or environment.
+    ///
+    /// When `false`, read-only operations can execute directly in-process against
+    /// the clean host filesystem without spawning or booting the microVM sandbox.
+    fn is_mutating(&self) -> bool {
+        self.definition().is_mutating
+    }
 
     /// Execute the tool invocation.
     async fn execute(&self, call: &ToolCall) -> Result<ToolOutput, ToolError>;

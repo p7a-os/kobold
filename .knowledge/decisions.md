@@ -382,4 +382,14 @@
 - **Source**: Architectural specification
 - **Date**: 2026-09-09
 
+### D-39
+- **ID**: D-39
+- **Statement**: Track tool mutation side-effects (`is_mutating`) on `ToolDefinition` and `Tool` to preserve a clean host read state: execute read-only tools (`read_file`, `list_dir`) directly in-process on host without spawning the microVM, lazily initializing the microVM sandbox and transitioning all subsequent operations to guest only upon the first mutating tool call (`write_file`, `edit_file`, `bash`).
+- **Alternatives rejected**: Booting the microVM on first read; copying workspace to guest disk image before any tool call.
+- **Reason**: Guarantees zero hypervisor memory allocation and sub-millisecond execution for turns that only inspect or reason about existing code, while seamlessly activating full sandbox isolation when mutations occur.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human insight in conversation
+- **Date**: 2026-09-09
+
 ## History
