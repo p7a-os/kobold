@@ -322,4 +322,24 @@
 - **Source**: Human decision via interview tool
 - **Date**: 2026-09-09
 
+### D-33
+- **ID**: D-33
+- **Statement**: Isolate concurrent sessions in `kobold-server` by spawning a dedicated worker child process (`kobold-runtime`) per session over an internal anonymous IPC socket pair.
+- **Alternatives rejected**: In-process multi-threading or async task multiplexing sharing a single daemon address space.
+- **Reason**: Guarantees total failure domain isolation (a panic, OOM, or microVM hypervisor fault in one session cannot take down the server or neighboring sessions) and ensures complete OS-level resource cleanup upon session termination.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-09
+
+### D-34
+- **ID**: D-34
+- **Statement**: Enforce proactive architectural co-design during brainstorming and planning: actively stress-test proposals against operational failure modes and propose superior architectural alternatives with concrete rationale before settling on a design.
+- **Alternatives rejected**: Passive validation or acceptance of the human's initial framing without proactive alternative exploration.
+- **Reason**: Ensures the harness architecture anticipates failure modes, resource leaks, isolation boundaries, and scaling bottlenecks early.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human directive in conversation
+- **Date**: 2026-09-09
+
 ## History

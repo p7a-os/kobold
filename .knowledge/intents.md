@@ -34,6 +34,14 @@
 - **Source**: Human request in conversation
 - **Date**: 2026-09-08
 
+### I-6
+- **ID**: I-6
+- **Statement**: The human wants the assistant to be proactive when brainstorming design and architecture, actively stress-testing proposals against failure modes and proposing superior architectural alternatives with concrete rationale before settling on a design.
+- **Status**: current
+- **Valid**: permanent
+- **Source**: Human request in conversation
+- **Date**: 2026-09-09
+
 ## History
 
 ### I-4

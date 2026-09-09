@@ -74,6 +74,15 @@
 - **Source**: Human decision via interview tool, D-32
 - **Date**: 2026-09-09
 
+### T-session-worker
+- **ID**: T-session-worker
+- **Term**: Session Worker
+- **Definition**: An isolated child process spawned by `kobold-server` executing `kobold-runtime` for a single workspace session, shielding the supervisor and neighboring sessions from crashes, OOMs, and resource leaks.
+- **Rejected aliases**: `agent-worker`, `subshell-runner`
+- **Status**: active
+- **Source**: Human decision via interview tool, D-33
+- **Date**: 2026-09-09
+
 ### T-event-sink
 - **ID**: T-event-sink
 - **Term**: Event Sink

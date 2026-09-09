@@ -37,6 +37,8 @@ Anything else is `assumed`.
 
 Plan first when the scope is unclear: the change touches several modules, or there are real alternative approaches. Investigate, write the plan, get agreement, then edit. Small, well-defined tasks go straight to code.
 
+Be proactive when brainstorming design and architecture. Do not passively validate the human's initial framing or wait to be prompted. Actively probe operational failure modes — blast radius, process isolation, memory leaks, lifecycle boundaries, and concurrency pitfalls. Propose superior architectural alternatives proactively with concrete rationale ("what about X? It is better because of A, B, and C") before settling on a design.
+
 For any non-trivial change: inspect the implementation; search for callers, references, tests, and configuration; establish current behavior; identify the smallest change that satisfies the request; decide how the result will be verified; make the change; run the verification; inspect the diff. Do not edit from filenames, naming conventions, or a partial view.
 
 No speculative refactors. A problem found outside the requested scope is fixed only if the task depends on it. Everything else is reported, with evidence, not touched.
