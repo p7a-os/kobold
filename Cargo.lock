@@ -1302,6 +1302,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "kobold-backend-openai"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "fastwebsockets",
+ "futures-core",
+ "futures-util",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "kobold-types",
+ "rustls",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-rustls",
+ "webpki-roots",
+]
+
+[[package]]
 name = "kobold-context"
 version = "0.1.0"
 dependencies = [
