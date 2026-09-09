@@ -2,7 +2,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 pub const DEFAULT_OPENAI_WS_URL: &str = "wss://api.openai.com/v1/responses";
-pub const DEFAULT_MODEL: &str = "gpt-4o";
+pub const DEFAULT_MODEL: &str = "gpt-5.6-luna";
+pub const DEFAULT_REASONING_EFFORT: &str = "low";
 pub const DEFAULT_IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
 /// Configuration settings for the OpenAI Responses WebSocket backend.
@@ -11,7 +12,7 @@ pub struct OpenAiConfig {
     /// Secret API key for OpenAI authentication.
     pub api_key: String,
 
-    /// Target model identifier (e.g. "gpt-4o", "o1", "o3-mini").
+    /// Target model identifier (default: "gpt-5.6-luna").
     pub model: String,
 
     /// WebSocket endpoint URL.
@@ -36,7 +37,7 @@ impl OpenAiConfig {
             api_key: api_key.into(),
             model: DEFAULT_MODEL.to_string(),
             base_url: DEFAULT_OPENAI_WS_URL.to_string(),
-            reasoning_effort: None,
+            reasoning_effort: Some(DEFAULT_REASONING_EFFORT.to_string()),
             zdr_enabled: false,
             idle_timeout: DEFAULT_IDLE_TIMEOUT,
             egress_socket: None,

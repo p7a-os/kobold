@@ -392,4 +392,15 @@
 - **Source**: Human insight in conversation
 - **Date**: 2026-09-09
 
+### D-40
+- **ID**: D-40
+- **Statement**: Configure `gpt-5.6-luna` with `effort: "low"` as the standard model and reasoning configuration for test suites and default OpenAI backend execution.
+- **Alternatives rejected**: Using `gpt-4o` without reasoning effort configuration; defaulting to `high` effort adding unnecessary test latency.
+- **Reason**: Human direction to standardize tests on `gpt-5.6-luna` with low reasoning effort, optimizing latency and token costs while verifying reasoning token streaming.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human message
+- **Date**: 2026-09-09
+
 ## History
+

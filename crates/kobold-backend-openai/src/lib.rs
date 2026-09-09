@@ -193,7 +193,10 @@ mod tests {
             _ => return,
         };
 
-        let config = OpenAiConfig::new(api_key).with_model("gpt-4o").with_zdr(true);
+        let config = OpenAiConfig::new(api_key)
+            .with_model("gpt-5.6-luna")
+            .with_reasoning_effort("low")
+            .with_zdr(true);
         let backend = OpenAiBackend::new(config);
 
         let messages = vec![Message::user("Say the word 'kobold' exactly.")];

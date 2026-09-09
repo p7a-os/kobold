@@ -61,10 +61,30 @@ impl LiveOpenAiTransport {
                 Box::new(stream)
             }
             None => {
-                let tcp = TcpStream::connect((HOSTNAME, 443))
+                let addrs = tokio::net::lookup_host((HOSTNAME, 443))
                     .await
-                    .map_err(|e| BackendError::Connection(format!("TCP connection to {HOSTNAME}:443 failed: {e}")))?;
-                let _ = tcp.set_nodelay(true);
+                    .map_err(|e| BackendError::Connection(format!("DNS lookup for {HOSTNAME}:443 failed: {e}")))?;
+                let mut last_err = None;
+                let mut connected_tcp = None;
+                for addr in addrs {
+                    match TcpStream::connect(addr).await {
+                        Ok(s) => {
+                            let _ = s.set_nodelay(true);
+                            connected_tcp = Some(s);
+                            break;
+                        }
+                        Err(e) => last_err = Some(e),
+                    }
+                }
+                let tcp = match connected_tcp {
+                    Some(s) => s,
+                    None => {
+                        return Err(BackendError::Connection(format!(
+                            "Failed connecting to {HOSTNAME}:443: {:?}",
+                            last_err
+                        )));
+                    }
+                };
                 Box::new(tcp)
             }
         };

@@ -42,7 +42,16 @@
 - **Source**: Human request in conversation
 - **Date**: 2026-09-09
 
+### I-7
+- **ID**: I-7
+- **Statement**: The human wants tests and default OpenAI backend execution to use model `gpt-5.6-luna` with low reasoning effort.
+- **Status**: current
+- **Valid**: permanent
+- **Source**: Human request in conversation
+- **Date**: 2026-09-09
+
 ## History
+
 
 ### I-4
 - **ID**: I-4
