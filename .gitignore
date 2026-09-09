@@ -5,6 +5,7 @@ mutants.out.old/
 # Local session log: contains conversation text.
 .kobold/
 .envrc
+.env
 .DS_Store
 *.swp
 *.swo
