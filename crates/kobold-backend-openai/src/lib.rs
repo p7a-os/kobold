@@ -4,7 +4,7 @@ pub mod transport;
 pub mod wire;
 
 pub use backend::OpenAiBackend;
-pub use config::{OpenAiConfig, DEFAULT_MODEL, DEFAULT_OPENAI_WS_URL};
+pub use config::{OpenAiConfig, DEFAULT_MODEL, DEFAULT_OPENAI_WS_URL, DEFAULT_REASONING_EFFORT};
 pub use transport::{LiveOpenAiTransport, MockWebSocketTransport, WebSocketTransport};
 
 #[cfg(test)]

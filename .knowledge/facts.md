@@ -130,4 +130,12 @@
 - **Source**: Apple Virtualization.framework documentation (`VZMacOSVirtualMachineConfiguration`, `VZLinuxBootLoader`)
 - **Date**: 2026-09-09
 
+### F-17
+- **ID**: F-17
+- **Statement**: `crates/kobold-runtime` provides an in-process Rust SDK assembling `AgentSession` with workspace rule discovery (`AGENTS.md`), APFS CoW checkpoints, dual sandbox modes (`HostProcess` and `MicroVm`), and append-only transcript DAG persistence (`.kobold/transcript.jsonl`), verified against live `gpt-5.6-luna` with low reasoning effort.
+- **Status**: verified
+- **Valid**: permanent
+- **Source**: `crates/kobold-runtime/src/lib.rs`, `.agent-reports/2026-09-09-task-6-kobold-runtime.md`
+- **Date**: 2026-09-09
+
 ## History
