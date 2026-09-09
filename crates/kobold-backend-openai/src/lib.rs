@@ -184,4 +184,29 @@ mod tests {
         let err = first.unwrap_err();
         assert!(err.to_string().contains("Too many requests"));
     }
+
+    #[tokio::test]
+    #[ignore = "requires live network and LLM_API_KEY"]
+    async fn test_live_openai_stream() {
+        let api_key = match std::env::var("LLM_API_KEY") {
+            Ok(k) if !k.is_empty() => k,
+            _ => return,
+        };
+
+        let config = OpenAiConfig::new(api_key).with_model("gpt-4o").with_zdr(true);
+        let backend = OpenAiBackend::new(config);
+
+        let messages = vec![Message::user("Say the word 'kobold' exactly.")];
+        let mut stream = backend.stream(&messages, &[]).await.expect("live stream should open");
+
+        let mut received_text = String::new();
+        while let Some(event_res) = stream.next().await {
+            let event = event_res.expect("live event should be Ok");
+            if let BackendEvent::TextDelta { delta } = event {
+                received_text.push_str(&delta);
+            }
+        }
+        assert!(received_text.to_lowercase().contains("kobold"));
+    }
 }
+
