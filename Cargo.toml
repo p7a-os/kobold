@@ -1,5 +1,13 @@
 [workspace]
-members = ["kobold-adapter-acp", "kobold-adapter-tmux", "kobold-core", "kobold-openai", "kobold-proto", "kobold-tts"]
+members = [
+    "kobold-adapter-acp",
+    "kobold-adapter-tmux",
+    "kobold-core",
+    "kobold-openai",
+    "kobold-proto",
+    "kobold-tts",
+    "crates/*",
+]
 # Without this, `cargo build` in a workspace that has a root package builds only
 # the root package, so kobold-tts silently never gets built.
 default-members = [".", "kobold-adapter-acp", "kobold-adapter-tmux", "kobold-core", "kobold-openai", "kobold-proto", "kobold-tts"]

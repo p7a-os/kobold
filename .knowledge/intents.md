@@ -26,12 +26,20 @@
 - **Source**: Human specified in user request
 - **Date**: 2026-09-08
 
-### I-4
-- **ID**: I-4
-- **Statement**: The human wants Kobold to realize the ParadigmaOS vision of a unified Harness and Meta-Harness, evolving beyond single-model execution into multi-model composition, automatic batch routing, egress-injected sandboxing, and multi-surface persistence.
+### I-5
+- **ID**: I-5
+- **Statement**: The human wants this Kobold fork to operate exclusively as a thin harness, stripping meta-harness features and restructuring the codebase into a modular Rust monorepo.
 - **Status**: current
 - **Valid**: permanent
-- **Source**: Human vision document `/Users/luis/w/kobold.pdf:1-4`
+- **Source**: Human request in conversation
 - **Date**: 2026-09-08
 
 ## History
+
+### I-4
+- **ID**: I-4
+- **Statement**: The human wants Kobold to realize the ParadigmaOS vision of a unified Harness and Meta-Harness, evolving beyond single-model execution into multi-model composition, automatic batch routing, egress-injected sandboxing, and multi-surface persistence.
+- **Status**: superseded by I-5
+- **Valid**: permanent
+- **Source**: Human vision document `/Users/luis/w/kobold.pdf:1-4`
+- **Date**: 2026-09-08

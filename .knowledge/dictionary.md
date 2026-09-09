@@ -41,11 +41,56 @@
 ### T-execution-kernel
 - **ID**: T-execution-kernel
 - **Term**: Kernel
-- **Definition**: The core state machine engine in `kobold-core` orchestrating turn loops, lane state transitions, tool execution, and transcript persistence.
+- **Definition**: The core execution engine in `crates/kobold-kernel` orchestrating the agentic turn loop, tool dispatch, and event streaming across abstract `Backend` and `Tool` traits without direct I/O dependencies.
 - **Rejected aliases**: `engine`, `orchestrator`
 - **Status**: active
-- **Source**: `kobold-core/src/kernel.rs:1-6`, `docs/architecture/kernel.md:3`
+- **Source**: `crates/kobold-kernel`, D-10
 - **Date**: 2026-09-08
+
+### T-kobold-types
+- **ID**: T-kobold-types
+- **Term**: kobold-types
+- **Definition**: The foundational crate defining common types, messages, event models, and abstract trait contracts (`Backend`, `Tool`, `EventSink`) without operational logic or heavy external dependencies.
+- **Rejected aliases**: `common`, `contracts`, `interfaces`
+- **Status**: active
+- **Source**: Architecture planning
+- **Date**: 2026-09-08
+
+### T-kobold-context
+- **ID**: T-kobold-context
+- **Term**: kobold-context
+- **Definition**: The crate managing conversation history, token budgeting, prompt construction, and context compaction strategies across model context windows.
+- **Rejected aliases**: `session`, `history`
+- **Status**: active
+- **Source**: Architecture planning, D-12
+- **Date**: 2026-09-08
+
+### T-event-sink
+- **ID**: T-event-sink
+- **Term**: Event Sink
+- **Definition**: An abstract trait contract in `kobold-types` (`EventSink`) through which `kobold-kernel` emits turn events to consumers without depending on concrete asynchronous runtimes.
+- **Rejected aliases**: `event-channel`, `event-dispatcher`
+- **Status**: active
+- **Source**: Architecture planning, D-13
+- **Date**: 2026-09-08
+
+### T-approval-policy
+- **ID**: T-approval-policy
+- **Term**: Approval Policy
+- **Definition**: A trait contract in `kobold-types` evaluating tool calls before dispatch to determine whether they run automatically, are rejected, or require interactive human authorization.
+- **Rejected aliases**: `permission-gate`, `security-filter`
+- **Status**: active
+- **Source**: Architecture planning, D-14
+- **Date**: 2026-09-08
+
+### T-zdr
+- **ID**: T-zdr
+- **Term**: Zero Data Retention
+- **Definition**: A user-toggleable privacy mode (`/zdr on|off`) setting `store: false` on OpenAI provider requests to prevent server-side retention of conversation and codebase data.
+- **Rejected aliases**: `private-mode`, `no-store`
+- **Status**: active
+- **Source**: Architecture planning, D-25
+- **Date**: 2026-09-09
 
 ### T-lane
 - **ID**: T-lane
