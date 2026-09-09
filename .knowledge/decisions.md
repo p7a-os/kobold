@@ -342,4 +342,44 @@
 - **Source**: Human directive in conversation
 - **Date**: 2026-09-09
 
+### D-35
+- **ID**: D-35
+- **Statement**: Align `FsTool` and `BashTool` on the same target filesystem: in `MicroVm` mode, both tools execute inside the guest VM over vsock against the APFS CoW disk image, keeping the host working tree clean until `git bundle` export.
+- **Alternatives rejected**: Running `FsTool` on host while `BashTool` runs in VM (split-brain desynchronization); direct VirtioFS host mounts.
+- **Reason**: Guarantees that file modifications performed by `edit_file` or `write_file` are immediately visible to compiler and test runs in `bash`, without corrupting or modifying host files prior to user review.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-09
+
+### D-36
+- **ID**: D-36
+- **Statement**: Provide dual sandbox execution modes: `MicroVm` as the default on Apple Silicon, with an opt-in `HostProcess` mode (`--sandbox host`) for native macOS/Xcode toolchains that cannot compile inside a Linux guest.
+- **Alternatives rejected**: Strict microVM-only execution (renders harness unusable for Swift/iOS/macOS projects).
+- **Reason**: Delivers whole-environment safety and APFS CoW rollback by default while preserving full capability for native macOS developers when explicitly requested.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-09
+
+### D-37
+- **ID**: D-37
+- **Statement**: Defer microVM boot until first execution tool invocation (lazy boot) and evict detached session workers after 30 minutes of idle time.
+- **Alternatives rejected**: Booting microVM unconditionally on session startup; retaining worker processes in memory indefinitely.
+- **Reason**: Eliminates startup latency for read-only or reasoning queries, prevents idle hypervisor memory hogging, and cleanly reclaims all OS resources while preserving transcript history.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Architectural analysis and stress-testing
+- **Date**: 2026-09-09
+
+### D-38
+- **ID**: D-38
+- **Statement**: Standardize the Terminal User Interface layout specification around a three-pane Ratatui view (Header with workspace/branch/ZDR, Transcript pane with AGENTS.md badge and markdown stream, and Input bar) with single-writer UI lease enforcement.
+- **Alternatives rejected**: Multi-writer concurrency; unformatted stream dumps.
+- **Reason**: Prevents input race conditions between simultaneous local and remote clients while giving developers immediate visual clarity over rules and privacy status.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Architectural specification
+- **Date**: 2026-09-09
+
 ## History
