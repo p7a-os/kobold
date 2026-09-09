@@ -292,4 +292,24 @@
 - **Source**: Human decision
 - **Date**: 2026-09-09
 
+### D-30
+- **ID**: D-30
+- **Statement**: Delegate tool output pruning strategies to tool outputs via a `PruningPolicy` enum (`Never`, `KeepLast`, `HeadTail`, `CollapseAfterTurns`, `Summary`), evaluated by `kobold-context` during compaction.
+- **Alternatives rejected**: Hardcoded global pruning heuristics in `kobold-context`; leaving all tool outputs uncompacted.
+- **Reason**: Tools understand their output lifecycle (e.g. `read_file` is superseded by newer reads of the same file; compiler runs benefit from head/tail retention) better than a generic harness heuristic.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-09
+
+### D-31
+- **ID**: D-31
+- **Statement**: Format the system prompt in `kobold-context` with structured sections: agent identity, workspace `AGENTS.md` rules, and dynamic environment metadata (cwd, git branch, timestamp, ZDR status).
+- **Alternatives rejected**: Static system prompt omitting environment context; ad-hoc string formatting in `kobold-kernel`.
+- **Reason**: Ensures the agent maintains accurate awareness of local repository state and active privacy settings while standardizing prompt structure across sessions.
+- **Status**: active
+- **Valid**: permanent
+- **Source**: Human decision via interview tool
+- **Date**: 2026-09-09
+
 ## History

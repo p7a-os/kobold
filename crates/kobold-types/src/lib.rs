@@ -15,7 +15,7 @@ pub use error::{BackendError, EventSinkError, ToolError};
 pub use event::{EventSink, KernelEvent, NoopEventSink, TurnFinishReason};
 pub use message::{ContentPart, Message, Role};
 pub use policy::{AllowAllPolicy, ApprovalAction, ApprovalPolicy, DenyAllPolicy};
-pub use tool::{Tool, ToolCall, ToolDefinition, ToolOutput};
+pub use tool::{PruningPolicy, Tool, ToolCall, ToolDefinition, ToolOutput};
 
 #[cfg(test)]
 mod tests {
@@ -41,13 +41,30 @@ mod tests {
             serde_json::from_str(&serialized).expect("failed to deserialize tool call");
         assert_eq!(call, deserialized);
 
-        let output = ToolOutput::error("call_123", "command failed with exit code 1");
+        let output = ToolOutput::error("call_123", "command failed with exit code 1")
+            .with_head_tail(5, 5);
         let serialized_output =
             serde_json::to_string(&output).expect("failed to serialize tool output");
         let deserialized_output: ToolOutput =
             serde_json::from_str(&serialized_output).expect("failed to deserialize tool output");
         assert_eq!(output, deserialized_output);
         assert!(deserialized_output.is_error);
+        assert_eq!(
+            deserialized_output.pruning,
+            PruningPolicy::HeadTail {
+                head_lines: 5,
+                tail_lines: 5
+            }
+        );
+
+        let read_output = ToolOutput::success("call_456", "content of main.rs")
+            .with_keep_last("src/main.rs");
+        assert_eq!(
+            read_output.pruning,
+            PruningPolicy::KeepLast {
+                key: "src/main.rs".to_string()
+            }
+        );
     }
 
     #[test]

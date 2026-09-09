@@ -90,6 +90,15 @@
 - **Rejected aliases**: `private-mode`, `no-store`
 - **Status**: active
 - **Source**: Architecture planning, D-25
+- **Date**: 2026-09-08
+
+### T-pruning-policy
+- **ID**: T-pruning-policy
+- **Term**: Pruning Policy
+- **Definition**: A specification attached to tool outputs dictating how historical tool execution results are compacted (`Never`, `KeepLast`, `HeadTail`, `CollapseAfterTurns`, `Summary`) by `kobold-context` when token budget limits are approached.
+- **Rejected aliases**: `compaction-hint`, `tool-truncation`
+- **Status**: active
+- **Source**: Human decision via interview tool, D-30
 - **Date**: 2026-09-09
 
 ### T-lane

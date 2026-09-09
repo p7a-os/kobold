@@ -46,12 +46,40 @@ impl ToolCall {
     }
 }
 
+/// Policy dictating how historical execution results for this tool call may be pruned or compacted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "mode", rename_all = "snake_case")]
+pub enum PruningPolicy {
+    /// Never prune or compact this output; retain verbatim in history.
+    Never,
+
+    /// Keep only the latest output sharing this key (e.g. file path for read_file).
+    KeepLast { key: String },
+
+    /// Retain the first and last lines, replacing the middle with an omission marker.
+    HeadTail { head_lines: usize, tail_lines: usize },
+
+    /// Keep verbatim for N completed turns, then compact to a one-line status stub.
+    CollapseAfterTurns { turns: usize },
+
+    /// Replace with a concise summary provided by the tool during compaction.
+    Summary { summary: String },
+}
+
+impl Default for PruningPolicy {
+    fn default() -> Self {
+        Self::CollapseAfterTurns { turns: 2 }
+    }
+}
+
 /// The result of executing a tool call.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolOutput {
     pub tool_call_id: String,
     pub content: String,
     pub is_error: bool,
+    #[serde(default)]
+    pub pruning: PruningPolicy,
 }
 
 impl ToolOutput {
@@ -61,6 +89,7 @@ impl ToolOutput {
             tool_call_id: tool_call_id.into(),
             content: content.into(),
             is_error: false,
+            pruning: PruningPolicy::default(),
         }
     }
 
@@ -70,7 +99,37 @@ impl ToolOutput {
             tool_call_id: tool_call_id.into(),
             content: content.into(),
             is_error: true,
+            pruning: PruningPolicy::default(),
         }
+    }
+
+    /// Attach a specific pruning policy to this output.
+    pub fn with_pruning(mut self, pruning: PruningPolicy) -> Self {
+        self.pruning = pruning;
+        self
+    }
+
+    /// Set pruning policy to KeepLast with a resource key.
+    pub fn with_keep_last(mut self, key: impl Into<String>) -> Self {
+        self.pruning = PruningPolicy::KeepLast { key: key.into() };
+        self
+    }
+
+    /// Set pruning policy to retain head and tail lines.
+    pub fn with_head_tail(mut self, head_lines: usize, tail_lines: usize) -> Self {
+        self.pruning = PruningPolicy::HeadTail {
+            head_lines,
+            tail_lines,
+        };
+        self
+    }
+
+    /// Set pruning policy to replace with a tool-authored summary.
+    pub fn with_summary(mut self, summary: impl Into<String>) -> Self {
+        self.pruning = PruningPolicy::Summary {
+            summary: summary.into(),
+        };
+        self
     }
 }
 
