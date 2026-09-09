@@ -1,0 +1,19 @@
+[package]
+name = "kobold-kernel"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+description = "Async agentic turn loop and tool orchestrator for Kobold thin harness"
+
+[dependencies]
+kobold-types = { path = "../kobold-types" }
+kobold-context = { path = "../kobold-context" }
+async-trait = "0.1"
+futures-core = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["alloc"] }
+thiserror = "2"
+tokio = { version = "1", default-features = false, features = ["sync", "macros"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"

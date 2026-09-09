@@ -60,7 +60,7 @@ impl TokenBudget {
 }
 
 /// Hybrid token estimator tracking exact provider counts and fast character heuristics.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct TokenEstimator {
     /// Number of messages included in the last provider reconciliation.
     reconciled_message_count: usize,
@@ -70,6 +70,12 @@ pub struct TokenEstimator {
 
     /// Approximate characters per token (default: 4).
     chars_per_token: usize,
+}
+
+impl Default for TokenEstimator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TokenEstimator {
@@ -83,6 +89,8 @@ impl TokenEstimator {
 
     /// Estimate token count for an individual message using character heuristics.
     pub fn estimate_message(&self, message: &Message) -> usize {
+        let cpt = self.chars_per_token.max(1);
+
         // Base envelope overhead per message (role tag, delimiters)
         let mut tokens = match message.role {
             Role::System => 4,
@@ -93,17 +101,17 @@ impl TokenEstimator {
 
         // Name tag overhead if present
         if let Some(name) = &message.name {
-            tokens += (name.len() + 3) / self.chars_per_token;
+            tokens += (name.len() + 3) / cpt;
         }
 
         // Content parts
         for part in &message.content {
             match part {
                 kobold_types::ContentPart::Text { text } => {
-                    tokens += (text.len() + 3) / self.chars_per_token;
+                    tokens += (text.len() + 3) / cpt;
                 }
                 kobold_types::ContentPart::Thought { thought } => {
-                    tokens += (thought.len() + 3) / self.chars_per_token;
+                    tokens += (thought.len() + 3) / cpt;
                 }
             }
         }
@@ -111,13 +119,13 @@ impl TokenEstimator {
         // Tool calls requested by assistant
         for call in &message.tool_calls {
             tokens += 8; // Tool call envelope
-            tokens += (call.name.len() + 3) / self.chars_per_token;
-            tokens += (call.arguments.len() + 3) / self.chars_per_token;
+            tokens += (call.name.len() + 3) / cpt;
+            tokens += (call.arguments.len() + 3) / cpt;
         }
 
         // Tool call ID reference
         if let Some(call_id) = &message.tool_call_id {
-            tokens += (call_id.len() + 3) / self.chars_per_token;
+            tokens += (call_id.len() + 3) / cpt;
         }
 
         tokens

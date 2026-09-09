@@ -1335,6 +1335,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "kobold-kernel"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures-core",
+ "futures-util",
+ "kobold-context",
+ "kobold-types",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+]
+
+[[package]]
 name = "kobold-openai"
 version = "0.1.0"
 dependencies = [
@@ -3137,6 +3151,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
