@@ -135,7 +135,7 @@ impl AgentSession {
     }
 
     /// Fork conversation from current or specified branch checkpoint into a new parallel branch.
-    pub fn fork(&self, _new_branch_name: &str, from_seq: usize) -> Result<Self, RuntimeError> {
+    pub fn fork(&self, new_branch_name: &str, from_seq: usize) -> Result<Self, RuntimeError> {
         // Build replayed history for the fork point
         let mut forked_history = ConversationHistory::new();
         let branch_records = self.transcript.read_branch_records(&self.branch)?;
@@ -148,20 +148,37 @@ impl AgentSession {
 
         // Reconstruct a new Kernel with the same backend, tools, budget, and estimator
         let mut builder = Kernel::builder()
+            .with_backend(self.kernel.backend().clone())
             .with_history(forked_history)
             .with_budget(*self.kernel.budget())
             .with_estimator(self.kernel.estimator().clone())
-            .with_event_sink(self.event_sink.clone());
+            .with_policy(self.kernel.policy().clone())
+            .with_event_sink(self.kernel.event_sink().clone())
+            .with_max_tool_steps(self.kernel.max_tool_steps());
 
         for tool in self.kernel.tools().values() {
             builder = builder.with_tool(tool.clone());
         }
 
-        // Backend is re-used
-        // Note: KernelBuilder needs a backend, we can rebuild using the builder pattern
-        // but AgentSession can duplicate or re-wire via SessionBuilder.
-        Err(RuntimeError::Transcript(
-            "Use SessionBuilder::fork_from_session for full fork assembly".into(),
+        let new_kernel = builder
+            .build()
+            .map_err(|e| RuntimeError::Config(format!("Failed to build kernel: {e}")))?;
+
+        let checkpoint_mgr = self
+            .checkpoint_mgr
+            .as_ref()
+            .map(|_| CheckpointManager::default_for_workspace(&self.workspace_root));
+
+        Ok(AgentSession::new(
+            format!("{}-fork-{}", self.session_id, from_seq),
+            self.workspace_root.clone(),
+            new_branch_name.to_string(),
+            Some((self.branch.clone(), from_seq)),
+            new_kernel,
+            self.transcript.clone(),
+            self.sandbox_mode,
+            self.event_sink.clone(),
+            checkpoint_mgr,
         ))
     }
 

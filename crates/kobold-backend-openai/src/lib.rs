@@ -122,10 +122,13 @@ mod tests {
                 "delta": "{\"command\": \"ls\"}"
             }).to_string(),
             serde_json::json!({
-                "type": "response.function_call_arguments.done",
-                "call_id": "call_abc",
-                "name": "bash",
-                "arguments": "{\"command\": \"ls\"}"
+                "type": "response.output_item.done",
+                "item": {
+                    "type": "function_call",
+                    "call_id": "call_abc",
+                    "name": "bash",
+                    "arguments": "{\"command\": \"ls\"}"
+                }
             }).to_string(),
             serde_json::json!({
                 "type": "response.completed",

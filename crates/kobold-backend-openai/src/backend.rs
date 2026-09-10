@@ -184,13 +184,8 @@ async fn consume_transport_stream(
                     })).await;
                 }
                 "response.function_call_arguments.done" => {
+                    // Argument streaming completed; the complete call is emitted by response.output_item.done
                     has_tool_calls = true;
-                    let call_id = event.call_id.unwrap_or_default();
-                    let name = event.name.unwrap_or_default();
-                    let arguments = event.arguments.unwrap_or_default();
-                    let _ = tx.send(Ok(BackendEvent::ToolCallComplete {
-                        call: ToolCall::new(call_id, name, arguments),
-                    })).await;
                 }
                 "response.output_item.done" => {
                     if let Some(item) = event.item {

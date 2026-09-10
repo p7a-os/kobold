@@ -13,4 +13,7 @@ cargo test -p kobold-runtime
 echo "=== 4. Full Thin Harness Crate Suite ==="
 cargo test -p kobold-types -p kobold-context -p kobold-kernel -p kobold-tool-fs -p kobold-tool-bash -p kobold-backend-openai -p kobold-runtime
 
+echo "=== 5. End-to-End Live Provider Tests ==="
+cargo test --test e2e_live -p kobold-runtime -- --test-threads=1
+
 echo "=== Verification Succeeded ==="

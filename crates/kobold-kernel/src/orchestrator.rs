@@ -55,6 +55,26 @@ impl Kernel {
         &self.tools
     }
 
+    /// Backend reference.
+    pub fn backend(&self) -> &Arc<dyn Backend> {
+        &self.backend
+    }
+
+    /// Approval policy reference.
+    pub fn policy(&self) -> &Arc<dyn ApprovalPolicy> {
+        &self.policy
+    }
+
+    /// Event sink reference.
+    pub fn event_sink(&self) -> &Arc<dyn EventSink> {
+        &self.event_sink
+    }
+
+    /// Maximum tool iterations per turn.
+    pub fn max_tool_steps(&self) -> usize {
+        self.max_tool_steps
+    }
+
     /// Execute a complete conversational turn, processing user input through inference,
     /// approval checks, sequential tool dispatch, and error feedback until completion.
     pub async fn step(&mut self, user_prompt: &str) -> Result<TurnResult, KernelError> {

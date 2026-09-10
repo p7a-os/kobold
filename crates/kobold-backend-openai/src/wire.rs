@@ -79,22 +79,26 @@ pub fn convert_messages_to_input(messages: &[Message]) -> Vec<InputItem> {
         match msg.role {
             Role::Tool => {
                 let call_id = msg.tool_call_id.clone().unwrap_or_default();
-                let output = msg.text();
-                items.push(InputItem::FunctionCallOutput {
-                    kind: "function_call_output",
-                    call_id,
-                    output,
-                });
+                if !call_id.is_empty() {
+                    let output = msg.text();
+                    items.push(InputItem::FunctionCallOutput {
+                        kind: "function_call_output",
+                        call_id,
+                        output,
+                    });
+                }
             }
             Role::Assistant => {
                 // If assistant requested tool calls, output function_call items
                 for call in &msg.tool_calls {
-                    items.push(InputItem::FunctionCall {
-                        kind: "function_call",
-                        call_id: call.id.clone(),
-                        name: call.name.clone(),
-                        arguments: call.arguments.clone(),
-                    });
+                    if !call.id.is_empty() {
+                        items.push(InputItem::FunctionCall {
+                            kind: "function_call",
+                            call_id: call.id.clone(),
+                            name: call.name.clone(),
+                            arguments: call.arguments.clone(),
+                        });
+                    }
                 }
                 // If assistant has text, output message item with type "output_text"
                 let text = msg.text();
